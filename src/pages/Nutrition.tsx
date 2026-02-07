@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Plus, Utensils, Flame, Beef, Wheat, Droplets, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -10,6 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useMealLogs, useCreateMealLog, useCreateMealItem, useFoodDatabase, useProfile, useTodayWorkout } from '@/hooks/use-fitness-data';
+import { MacroDonutChart } from '@/components/nutrition/MacroDonutChart';
+import { MealTemplates } from '@/components/nutrition/MealTemplates';
+import { FoodCategoryTabs } from '@/components/nutrition/FoodCategoryTabs';
+import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState';
+import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -26,8 +31,9 @@ export default function Nutrition() {
   const [isTrainingDay, setIsTrainingDay] = useState(true);
   const [addingToMealId, setAddingToMealId] = useState<string | null>(null);
   const [foodSearchQuery, setFoodSearchQuery] = useState('');
-  const [selectedFood, setSelectedFood] = useState<typeof foods[0] | null>(null);
+  const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState('100');
+  const [isAddMealDialogOpen, setIsAddMealDialogOpen] = useState(false);
 
   // Determine if today is a training day based on workout
   const isActualTrainingDay = !!todayWorkout;
@@ -68,21 +74,20 @@ export default function Nutrition() {
         fats: profile?.rest_day_fats || 70,
       };
 
-  const filteredFoods = useMemo(() => {
-    if (!foodSearchQuery) return foods.slice(0, 10);
-    return foods.filter(f => 
-      f.name.toLowerCase().includes(foodSearchQuery.toLowerCase())
-    ).slice(0, 20);
-  }, [foods, foodSearchQuery]);
-
-  const handleCreateMeal = async () => {
-    if (!newMealName.trim()) return;
+  const handleCreateMeal = async (mealName?: string) => {
+    const name = mealName || newMealName;
+    if (!name.trim()) return;
     await createMealLog.mutateAsync({
-      meal_name: newMealName,
+      meal_name: name,
       meal_date: dateStr,
       is_training_day: isTrainingDay,
     });
     setNewMealName('');
+    setIsAddMealDialogOpen(false);
+  };
+
+  const handleQuickAddMeal = async (mealName: string) => {
+    await handleCreateMeal(mealName);
   };
 
   const handleAddFood = async () => {
@@ -218,8 +223,23 @@ export default function Nutrition() {
         </Card>
       </div>
 
+      {/* Macro Chart + Meal Templates Row */}
+      <div className="grid md:grid-cols-2 gap-4">
+        <MacroDonutChart
+          protein={dailyTotals.protein}
+          carbs={dailyTotals.carbs}
+          fats={dailyTotals.fats}
+          targetCalories={targets.calories}
+          currentCalories={dailyTotals.calories}
+        />
+        <MealTemplates
+          onSelectTemplate={handleQuickAddMeal}
+          onCustomMeal={() => setIsAddMealDialogOpen(true)}
+        />
+      </div>
+
       {/* Add Meal Dialog */}
-      <Dialog>
+      <Dialog open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
@@ -251,156 +271,141 @@ export default function Nutrition() {
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <DialogClose asChild>
-              <Button onClick={handleCreateMeal} disabled={!newMealName.trim()}>
-                Create Meal
-              </Button>
-            </DialogClose>
+            <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()}>
+              Create Meal
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Meals List */}
+      {/* Meals List or Empty State */}
       <div className="space-y-4">
-        {mealLogs.map(meal => {
-          const mealTotals = meal.meal_items?.reduce((acc, item) => ({
-            calories: acc.calories + (item.calories || 0),
-            protein: acc.protein + (item.protein || 0),
-          }), { calories: 0, protein: 0 }) || { calories: 0, protein: 0 };
+        <h2 className="text-lg font-semibold">Meals</h2>
+        
+        {mealLogs.length === 0 ? (
+          <NutritionEmptyState
+            onAddMeal={() => setIsAddMealDialogOpen(true)}
+            onQuickAdd={handleQuickAddMeal}
+          />
+        ) : (
+          mealLogs.map(meal => {
+            const mealTotals = meal.meal_items?.reduce((acc, item) => ({
+              calories: acc.calories + (item.calories || 0),
+              protein: acc.protein + (item.protein || 0),
+            }), { calories: 0, protein: 0 }) || { calories: 0, protein: 0 };
 
-          return (
-            <Card key={meal.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{meal.meal_name}</CardTitle>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{Math.round(mealTotals.calories)} kcal</span>
-                    <span>{Math.round(mealTotals.protein)}g protein</span>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setAddingToMealId(meal.id)}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Food
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-lg">
-                        <DialogHeader>
-                          <DialogTitle>Add Food to {meal.meal_name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder="Search foods..."
-                              value={foodSearchQuery}
-                              onChange={(e) => setFoodSearchQuery(e.target.value)}
-                              className="pl-10"
-                            />
-                          </div>
-                          
-                          {!selectedFood ? (
-                            <div className="max-h-[300px] overflow-y-auto space-y-2">
-                              {filteredFoods.map(food => (
-                                <button
-                                  key={food.id}
-                                  onClick={() => setSelectedFood(food)}
-                                  className="w-full text-left p-3 rounded-lg border hover:bg-accent transition-colors"
-                                >
-                                  <div className="font-medium">{food.name}</div>
-                                  <div className="text-sm text-muted-foreground">
-                                    {food.calories_per_100g} kcal • {food.protein_per_100g}g P • {food.carbs_per_100g}g C • {food.fats_per_100g}g F per 100g
+            return (
+              <Card key={meal.id}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">{meal.meal_name}</CardTitle>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{Math.round(mealTotals.calories)} kcal</span>
+                      <span>{Math.round(mealTotals.protein)}g protein</span>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setAddingToMealId(meal.id);
+                              setSelectedFood(null);
+                              setFoodSearchQuery('');
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Food
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-lg">
+                          <DialogHeader>
+                            <DialogTitle>Add Food to {meal.meal_name}</DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4">
+                            {!selectedFood ? (
+                              <FoodCategoryTabs
+                                foods={foods}
+                                searchQuery={foodSearchQuery}
+                                onSearchChange={setFoodSearchQuery}
+                                onSelectFood={setSelectedFood}
+                              />
+                            ) : (
+                              <div className="space-y-4">
+                                <div className="p-4 bg-accent/50 rounded-lg">
+                                  <div className="font-medium">{selectedFood.name}</div>
+                                  <div className="text-sm text-muted-foreground mt-1">
+                                    {selectedFood.calories_per_100g} kcal per 100g
                                   </div>
-                                </button>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="space-y-4">
-                              <div className="p-4 bg-accent/50 rounded-lg">
-                                <div className="font-medium">{selectedFood.name}</div>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  {selectedFood.calories_per_100g} kcal per 100g
                                 </div>
+                                <div className="space-y-2">
+                                  <Label>Quantity (grams)</Label>
+                                  <Input
+                                    type="number"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.value)}
+                                    min="1"
+                                  />
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  = {Math.round(selectedFood.calories_per_100g * parseFloat(quantity || '0') / 100)} kcal, {' '}
+                                  {Math.round(selectedFood.protein_per_100g * parseFloat(quantity || '0') / 100 * 10) / 10}g protein
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => setSelectedFood(null)}
+                                >
+                                  ← Choose different food
+                                </Button>
                               </div>
-                              <div className="space-y-2">
-                                <Label>Quantity (grams)</Label>
-                                <Input
-                                  type="number"
-                                  value={quantity}
-                                  onChange={(e) => setQuantity(e.target.value)}
-                                  min="1"
-                                />
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                = {Math.round(selectedFood.calories_per_100g * parseFloat(quantity || '0') / 100)} kcal, {' '}
-                                {Math.round(selectedFood.protein_per_100g * parseFloat(quantity || '0') / 100 * 10) / 10}g protein
-                              </div>
+                            )}
+                          </div>
+                          <DialogFooter>
+                            <DialogClose asChild>
+                              <Button variant="outline">Cancel</Button>
+                            </DialogClose>
+                            <DialogClose asChild>
                               <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => setSelectedFood(null)}
+                                onClick={handleAddFood} 
+                                disabled={!selectedFood || !quantity}
                               >
-                                ← Choose different food
+                                Add Food
                               </Button>
-                            </div>
-                          )}
-                        </div>
-                        <DialogFooter>
-                          <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                          </DialogClose>
-                          <DialogClose asChild>
-                            <Button 
-                              onClick={handleAddFood} 
-                              disabled={!selectedFood || !quantity}
-                            >
-                              Add Food
-                            </Button>
-                          </DialogClose>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                            </DialogClose>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              
-              {meal.meal_items && meal.meal_items.length > 0 && (
-                <CardContent>
-                  <div className="space-y-2">
-                    {meal.meal_items.map(item => (
-                      <div 
-                        key={item.id}
-                        className="flex items-center justify-between py-2 px-3 bg-accent/30 rounded-lg text-sm"
-                      >
-                        <div>
-                          <span className="font-medium">
-                            {item.food?.name || item.custom_food_name}
-                          </span>
-                          <span className="text-muted-foreground ml-2">
-                            {item.quantity_g}g
-                          </span>
+                </CardHeader>
+                
+                {meal.meal_items && meal.meal_items.length > 0 && (
+                  <CardContent>
+                    <div className="space-y-2">
+                      {meal.meal_items.map(item => (
+                        <div 
+                          key={item.id}
+                          className="flex items-center justify-between py-2 px-3 bg-accent/30 rounded-lg text-sm"
+                        >
+                          <div>
+                            <span className="font-medium">
+                              {item.food?.name || item.custom_food_name}
+                            </span>
+                            <span className="text-muted-foreground ml-2">
+                              {item.quantity_g}g
+                            </span>
+                          </div>
+                          <div className="text-muted-foreground">
+                            {Math.round(item.calories)} kcal • {Math.round(item.protein)}g P
+                          </div>
                         </div>
-                        <div className="text-muted-foreground">
-                          {Math.round(item.calories)} kcal • {Math.round(item.protein)}g P
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-          );
-        })}
-
-        {mealLogs.length === 0 && (
-          <div className="text-center py-12">
-            <Utensils className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-foreground">No meals logged</h3>
-            <p className="text-muted-foreground">Add your first meal to start tracking</p>
-          </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })
         )}
       </div>
     </div>
