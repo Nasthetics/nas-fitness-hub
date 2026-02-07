@@ -51,6 +51,19 @@ export function useExerciseLibrary() {
         .order('name');
       if (error) throw error;
       return data.map(e => ({
+        id: e.id,
+        name: e.name,
+        primary_muscle: e.primary_muscle,
+        secondary_muscle: e.secondary_muscle,
+        equipment: e.equipment,
+        substitutions: e.substitutions,
+        coaching_cues: e.coaching_cues,
+        image_url: e.image_url,
+        created_at: e.created_at,
+        primary_muscle_name: e.primary?.name,
+        secondary_muscle_name: e.secondary?.name,
+      })) as Exercise[];
+      return data.map(e => ({
         ...e,
         primary_muscle_name: e.primary?.name,
         secondary_muscle_name: e.secondary?.name,

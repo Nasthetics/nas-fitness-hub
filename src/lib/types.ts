@@ -21,6 +21,7 @@ export interface Exercise {
   equipment: EquipmentType;
   substitutions: string[] | null;
   coaching_cues: string | null;
+  image_url: string | null;
   created_at: string;
   // Joined fields
   primary_muscle_name?: string;

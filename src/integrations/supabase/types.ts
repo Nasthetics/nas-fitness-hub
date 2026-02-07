@@ -95,6 +95,7 @@ export type Database = {
           created_at: string
           equipment: Database["public"]["Enums"]["equipment_type"]
           id: string
+          image_url: string | null
           name: string
           primary_muscle: string | null
           secondary_muscle: string | null
@@ -105,6 +106,7 @@ export type Database = {
           created_at?: string
           equipment: Database["public"]["Enums"]["equipment_type"]
           id?: string
+          image_url?: string | null
           name: string
           primary_muscle?: string | null
           secondary_muscle?: string | null
@@ -115,6 +117,7 @@ export type Database = {
           created_at?: string
           equipment?: Database["public"]["Enums"]["equipment_type"]
           id?: string
+          image_url?: string | null
           name?: string
           primary_muscle?: string | null
           secondary_muscle?: string | null
