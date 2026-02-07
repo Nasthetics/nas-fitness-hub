@@ -202,9 +202,13 @@ export default function Exercises() {
             {viewMode === 'grid' && (
               <div className="relative">
                 <ExerciseImage
+                  exerciseId={exercise.id}
                   exerciseName={exercise.name}
                   equipment={exercise.equipment}
+                  imageUrl={exercise.image_url}
+                  primaryMuscle={exercise.primary_muscle_name}
                   className="h-32 w-full"
+                  enableGeneration={true}
                 />
               </div>
             )}

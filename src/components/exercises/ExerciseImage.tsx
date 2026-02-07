@@ -1,14 +1,19 @@
 import { useState } from 'react';
-import { Dumbbell } from 'lucide-react';
+import { Dumbbell, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EQUIPMENT_INFO, type EquipmentType } from '@/lib/types';
+import { useExerciseImage } from '@/hooks/use-exercise-image';
+import { Button } from '@/components/ui/button';
 
 interface ExerciseImageProps {
+  exerciseId?: string;
   exerciseName: string;
   equipment: EquipmentType;
   imageUrl?: string | null;
+  primaryMuscle?: string | null;
   className?: string;
   showPlaceholder?: boolean;
+  enableGeneration?: boolean;
 }
 
 // Generate a gradient background based on muscle group
@@ -44,20 +49,34 @@ const getExerciseGradient = (name: string) => {
 };
 
 export function ExerciseImage({
+  exerciseId,
   exerciseName,
   equipment,
-  imageUrl,
+  imageUrl: existingImageUrl,
+  primaryMuscle,
   className,
   showPlaceholder = true,
+  enableGeneration = true,
 }: ExerciseImageProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  const { imageUrl, isGenerating, generate } = useExerciseImage({
+    exerciseId: exerciseId || '',
+    exerciseName,
+    equipment,
+    primaryMuscle,
+    existingImageUrl,
+    autoGenerate: false,
+  });
+
   const equipmentInfo = EQUIPMENT_INFO[equipment] || EQUIPMENT_INFO.other;
   const gradientClass = getExerciseGradient(exerciseName);
 
+  const displayUrl = imageUrl || existingImageUrl;
+
   // If we have a valid image URL and no error
-  if (imageUrl && !imageError) {
+  if (displayUrl && !imageError) {
     return (
       <div className={cn('relative overflow-hidden rounded-lg bg-muted/20', className)}>
         {!imageLoaded && showPlaceholder && (
@@ -66,7 +85,7 @@ export function ExerciseImage({
           </div>
         )}
         <img
-          src={imageUrl}
+          src={displayUrl}
           alt={exerciseName}
           className={cn(
             'w-full h-full object-cover transition-opacity duration-300',
@@ -79,12 +98,12 @@ export function ExerciseImage({
     );
   }
 
-  // Placeholder with equipment icon
+  // Placeholder with equipment icon and optional generate button
   if (showPlaceholder) {
     return (
       <div
         className={cn(
-          'flex items-center justify-center rounded-lg bg-gradient-to-br',
+          'flex flex-col items-center justify-center rounded-lg bg-gradient-to-br gap-2',
           gradientClass,
           className
         )}
@@ -95,6 +114,31 @@ export function ExerciseImage({
             {equipmentInfo.label}
           </p>
         </div>
+        
+        {enableGeneration && exerciseId && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              generate();
+            }}
+            disabled={isGenerating}
+            className="text-xs h-7 px-2 bg-background/50 hover:bg-background/80"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-3 w-3 mr-1" />
+                Generate AI Image
+              </>
+            )}
+          </Button>
+        )}
       </div>
     );
   }
