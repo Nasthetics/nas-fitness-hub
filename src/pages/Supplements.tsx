@@ -35,6 +35,32 @@ export default function Supplements() {
     [supplements]
   );
 
+  // Group supplements by timing - must be before any conditional returns
+  const groupedByTiming = useMemo(() => {
+    const groups: Record<string, typeof activeSupplements> = {
+      'AM': [],
+      'pre_workout': [],
+      'with_meal': [],
+      'post_workout': [],
+      'PM': [],
+      'anytime': [],
+    };
+    
+    activeSupplements.forEach(supp => {
+      if (!supp.timing || supp.timing.length === 0) {
+        groups.anytime.push(supp);
+      } else {
+        // Add to first timing group
+        const primaryTiming = supp.timing[0];
+        if (groups[primaryTiming]) {
+          groups[primaryTiming].push(supp);
+        }
+      }
+    });
+    
+    return groups;
+  }, [activeSupplements]);
+
   // Get log status for each supplement
   const getLogStatus = (supplementId: string) => {
     const log = supplementLogs.find(l => l.supplement_id === supplementId);
@@ -93,32 +119,6 @@ export default function Supplements() {
       </div>
     );
   }
-
-  // Group supplements by timing
-  const groupedByTiming = useMemo(() => {
-    const groups: Record<string, typeof activeSupplements> = {
-      'AM': [],
-      'pre_workout': [],
-      'with_meal': [],
-      'post_workout': [],
-      'PM': [],
-      'anytime': [],
-    };
-    
-    activeSupplements.forEach(supp => {
-      if (!supp.timing || supp.timing.length === 0) {
-        groups.anytime.push(supp);
-      } else {
-        // Add to first timing group
-        const primaryTiming = supp.timing[0];
-        if (groups[primaryTiming]) {
-          groups[primaryTiming].push(supp);
-        }
-      }
-    });
-    
-    return groups;
-  }, [activeSupplements]);
 
   return (
     <div className="space-y-6">
