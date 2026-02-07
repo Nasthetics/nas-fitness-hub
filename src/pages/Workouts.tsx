@@ -1,17 +1,16 @@
 import { useState, useMemo } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Dumbbell, 
   Plus, 
   ChevronLeft, 
   ChevronRight,
   Check,
-  PlayCircle
+  PlayCircle,
+  Settings
 } from 'lucide-react';
 import { 
   useWorkoutTemplates, 
@@ -19,20 +18,24 @@ import {
   useTodayWorkout,
   useCreateWorkoutLog,
   useTemplateExercises,
-  useExerciseLibrary,
   useCreateExerciseLog,
   useCreateSetLog,
   useUpdateSetLog,
+  useDeleteSetLog,
+  useDeleteExerciseLog,
   useUpdateWorkoutLog
 } from '@/hooks/use-fitness-data';
 import { WORKOUT_DAY_INFO, type WorkoutDayType, type SetLog } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { WorkoutMusclePreview } from '@/components/workouts/WorkoutMusclePreview';
+import { EnhancedExerciseCard } from '@/components/workouts/EnhancedExerciseCard';
+import { WorkoutTemplateSetup } from '@/components/workouts/WorkoutTemplateSetup';
 
 export default function Workouts() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [activeWorkoutId, setActiveWorkoutId] = useState<string | null>(null);
+  const [showTemplateSetup, setShowTemplateSetup] = useState(false);
   
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
@@ -48,6 +51,8 @@ export default function Workouts() {
   const createExerciseLog = useCreateExerciseLog();
   const createSetLog = useCreateSetLog();
   const updateSetLog = useUpdateSetLog();
+  const deleteSetLog = useDeleteSetLog();
+  const deleteExerciseLog = useDeleteExerciseLog();
   const updateWorkoutLog = useUpdateWorkoutLog();
 
   // Get today's day number (1-7, Monday-Sunday)
@@ -138,6 +143,29 @@ export default function Workouts() {
     }
   };
 
+  const handleAddSet = async (data: Omit<SetLog, 'id' | 'created_at'>) => {
+    await createSetLog.mutateAsync(data);
+    refetchTodayWorkout();
+  };
+
+  const handleUpdateSet = async (setId: string, updates: Partial<SetLog>) => {
+    await updateSetLog.mutateAsync({ id: setId, ...updates });
+    refetchTodayWorkout();
+  };
+
+  const handleDeleteSet = async (setId: string) => {
+    await deleteSetLog.mutateAsync(setId);
+    refetchTodayWorkout();
+  };
+
+  const handleDeleteExercise = async (exerciseLogId: string) => {
+    await deleteExerciseLog.mutateAsync(exerciseLogId);
+    refetchTodayWorkout();
+    toast({ title: 'Exercise removed' });
+  };
+
+  const hasTemplates = templates && templates.length > 0;
+
   return (
     <div className="space-y-6 animate-in">
       {/* Header */}
@@ -148,6 +176,15 @@ export default function Workouts() {
             {format(selectedDate, 'EEEE, MMMM d, yyyy')}
           </p>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowTemplateSetup(true)}
+          className="gap-2"
+        >
+          <Settings className="h-4 w-4" />
+          {hasTemplates ? 'Edit Split' : 'Set Up Split'}
+        </Button>
       </div>
 
       {/* Week Selector */}
@@ -200,7 +237,7 @@ export default function Workouts() {
                   </span>
                 )}
                 {day.workout?.completed && (
-                  <Check className="h-3 w-3 mt-1 text-success" />
+                  <Check className="h-3 w-3 mt-1 text-green-500" />
                 )}
               </button>
             ))}
@@ -221,196 +258,107 @@ export default function Workouts() {
         </Card>
       ) : !currentWorkout ? (
         <Card className="border-primary/30 bg-gradient-to-br from-card to-primary/5">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Dumbbell className="h-12 w-12 text-primary mb-4" />
-            <h2 className="text-xl font-semibold mb-2">
-              {todayTemplate ? WORKOUT_DAY_INFO[todayTemplate.day_type].label : 'No workout planned'}
-            </h2>
+          <CardContent className="py-8">
             {todayTemplate ? (
-              <>
-                <p className="text-muted-foreground mb-6">
-                  {templateExercises?.length || 0} exercises ready to go
-                </p>
-                <Button 
-                  size="lg" 
-                  onClick={handleStartWorkout}
-                  disabled={createWorkoutLog.isPending}
-                  className="gap-2"
-                >
-                  <PlayCircle className="h-5 w-5" />
-                  Start Workout
-                </Button>
-              </>
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                {/* Muscle Preview */}
+                <WorkoutMusclePreview 
+                  dayType={todayTemplate.day_type}
+                  className="shrink-0"
+                />
+                
+                {/* Start Workout CTA */}
+                <div className="flex-1 text-center md:text-left">
+                  <h2 className="text-xl font-semibold mb-2">
+                    {WORKOUT_DAY_INFO[todayTemplate.day_type].label}
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    {templateExercises?.length || 0} exercises ready to go
+                  </p>
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartWorkout}
+                    disabled={createWorkoutLog.isPending}
+                    className="gap-2"
+                  >
+                    <PlayCircle className="h-5 w-5" />
+                    Start Workout
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <p className="text-muted-foreground">
-                Set up your workout templates in settings
-              </p>
+              <div className="flex flex-col items-center justify-center py-6">
+                <Dumbbell className="h-12 w-12 text-primary mb-4" />
+                <h2 className="text-xl font-semibold mb-2">No workout planned</h2>
+                <p className="text-muted-foreground mb-4">
+                  Set up your workout split to get started
+                </p>
+                <Button onClick={() => setShowTemplateSetup(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Set Up Split
+                </Button>
+              </div>
             )}
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
           {/* Workout Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
               <Badge className={WORKOUT_DAY_INFO[currentWorkout.template?.day_type as WorkoutDayType || 'rest'].color}>
                 {currentWorkout.template?.name || 'Custom Workout'}
               </Badge>
               {currentWorkout.completed && (
-                <Badge variant="outline" className="text-success border-success">
+                <Badge variant="outline" className="text-green-500 border-green-500/50">
                   <Check className="h-3 w-3 mr-1" />
                   Completed
                 </Badge>
               )}
             </div>
-            {!currentWorkout.completed && (
-              <Button onClick={handleCompleteWorkout} className="gap-2">
-                <Check className="h-4 w-4" />
-                Complete Workout
-              </Button>
-            )}
+            
+            <div className="flex items-center gap-2">
+              {/* Muscle preview for active workout */}
+              {currentWorkout.template?.day_type && currentWorkout.template.day_type !== 'rest' && (
+                <WorkoutMusclePreview 
+                  dayType={currentWorkout.template.day_type}
+                  className="hidden lg:block"
+                />
+              )}
+              
+              {!currentWorkout.completed && (
+                <Button onClick={handleCompleteWorkout} className="gap-2">
+                  <Check className="h-4 w-4" />
+                  Complete Workout
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Exercise List */}
           <div className="space-y-4">
             {currentWorkout.exercise_logs?.map((exerciseLog, idx) => (
-              <ExerciseCard 
+              <EnhancedExerciseCard 
                 key={exerciseLog.id} 
                 exerciseLog={exerciseLog}
                 exerciseNumber={idx + 1}
                 templateExercise={templateExercises?.find(te => te.exercise_id === exerciseLog.exercise_id)}
-                onAddSet={async (setData) => {
-                  await createSetLog.mutateAsync(setData);
-                  refetchTodayWorkout();
-                }}
-                onUpdateSet={async (setId, updates) => {
-                  await updateSetLog.mutateAsync({ id: setId, ...updates });
-                  refetchTodayWorkout();
-                }}
+                previousSets={[]} // Will be enhanced with usePreviousExerciseSets per exercise
+                onAddSet={handleAddSet}
+                onUpdateSet={handleUpdateSet}
+                onDeleteSet={handleDeleteSet}
+                onDeleteExercise={handleDeleteExercise}
               />
             ))}
           </div>
         </div>
       )}
+
+      {/* Template Setup Dialog */}
+      <WorkoutTemplateSetup 
+        open={showTemplateSetup} 
+        onOpenChange={setShowTemplateSetup} 
+      />
     </div>
-  );
-}
-
-// Exercise Card Component
-function ExerciseCard({ 
-  exerciseLog, 
-  exerciseNumber,
-  templateExercise,
-  onAddSet,
-  onUpdateSet
-}: { 
-  exerciseLog: any;
-  exerciseNumber: number;
-  templateExercise?: any;
-  onAddSet: (data: Omit<SetLog, 'id' | 'created_at'>) => Promise<void>;
-  onUpdateSet: (setId: string, updates: Partial<SetLog>) => Promise<void>;
-}) {
-  const exercise = exerciseLog.exercise;
-  const sets = exerciseLog.set_logs || [];
-  
-  const handleAddSet = async () => {
-    const lastSet = sets[sets.length - 1];
-    await onAddSet({
-      exercise_log_id: exerciseLog.id,
-      set_number: sets.length + 1,
-      reps: lastSet?.reps || templateExercise?.default_reps || 10,
-      weight_kg: lastSet?.weight_kg || 0,
-      rpe: null,
-      rest_seconds: templateExercise?.default_rest_seconds || 90,
-      notes: null,
-      is_pr: false,
-    });
-  };
-
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-              {exerciseNumber}
-            </span>
-            {exercise?.name || 'Exercise'}
-          </CardTitle>
-          {exercise?.primary_muscle_name && (
-            <Badge variant="outline" className="text-xs">
-              {exercise.primary_muscle_name}
-            </Badge>
-          )}
-        </div>
-        {exercise?.coaching_cues && (
-          <p className="text-xs text-muted-foreground mt-1">
-            💡 {exercise.coaching_cues}
-          </p>
-        )}
-      </CardHeader>
-      <CardContent>
-        {/* Sets Table */}
-        <div className="space-y-2">
-          <div className="grid grid-cols-5 gap-2 text-xs font-medium text-muted-foreground px-2">
-            <span>Set</span>
-            <span>Weight</span>
-            <span>Reps</span>
-            <span>RPE</span>
-            <span>Vol</span>
-          </div>
-          
-          {sets.map((set: SetLog) => (
-            <div 
-              key={set.id} 
-              className={cn(
-                'grid grid-cols-5 gap-2 p-2 rounded-lg',
-                set.is_pr ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'
-              )}
-            >
-              <span className="flex items-center justify-center font-medium">
-                {set.set_number}
-              </span>
-              <Input
-                type="number"
-                value={set.weight_kg || ''}
-                onChange={(e) => onUpdateSet(set.id, { weight_kg: Number(e.target.value) })}
-                className="h-8 text-center"
-                placeholder="kg"
-              />
-              <Input
-                type="number"
-                value={set.reps || ''}
-                onChange={(e) => onUpdateSet(set.id, { reps: Number(e.target.value) })}
-                className="h-8 text-center"
-                placeholder="reps"
-              />
-              <Input
-                type="number"
-                value={set.rpe || ''}
-                onChange={(e) => onUpdateSet(set.id, { rpe: Number(e.target.value) })}
-                className="h-8 text-center"
-                placeholder="1-10"
-                min={1}
-                max={10}
-              />
-              <span className="flex items-center justify-center text-sm text-muted-foreground">
-                {(set.weight_kg || 0) * (set.reps || 0)}
-              </span>
-            </div>
-          ))}
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full mt-2"
-            onClick={handleAddSet}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Set
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

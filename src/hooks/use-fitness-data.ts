@@ -389,6 +389,97 @@ export function useUpdateSetLog() {
   });
 }
 
+export function useDeleteSetLog() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('set_logs')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['today-workout'] });
+    },
+  });
+}
+
+// ============ DELETE EXERCISE LOG ============
+export function useDeleteExerciseLog() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // First delete all set logs for this exercise
+      await supabase.from('set_logs').delete().eq('exercise_log_id', id);
+      // Then delete the exercise log
+      const { error } = await supabase
+        .from('exercise_logs')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['workout-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['today-workout'] });
+    },
+  });
+}
+
+// ============ PREVIOUS EXERCISE SETS ============
+export function usePreviousExerciseSets(exerciseId: string | null, currentDate: string) {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['previous-sets', user?.id, exerciseId, currentDate],
+    queryFn: async () => {
+      if (!user || !exerciseId) return [];
+      
+      // Get the most recent workout with this exercise before current date
+      const { data, error } = await supabase
+        .from('set_logs')
+        .select(`
+          weight_kg,
+          reps,
+          set_number,
+          exercise_log:exercise_logs!inner(
+            exercise_id,
+            workout_log:workout_logs!inner(
+              workout_date,
+              user_id
+            )
+          )
+        `)
+        .eq('exercise_log.exercise_id', exerciseId)
+        .eq('exercise_log.workout_log.user_id', user.id)
+        .lt('exercise_log.workout_log.workout_date', currentDate)
+        .order('exercise_log(workout_log(workout_date))', { ascending: false })
+        .order('set_number', { ascending: true })
+        .limit(10);
+      
+      if (error) throw error;
+      
+      // Return just the first workout's sets
+      const sets = data || [];
+      if (sets.length === 0) return [];
+      
+      // Get the workout date of the first set and filter to only that workout
+      const firstWorkoutDate = (sets[0] as any).exercise_log?.workout_log?.workout_date;
+      return sets
+        .filter((s: any) => s.exercise_log?.workout_log?.workout_date === firstWorkoutDate)
+        .map((s: any) => ({
+          weight_kg: s.weight_kg,
+          reps: s.reps,
+          set_number: s.set_number,
+        }));
+    },
+    enabled: !!user && !!exerciseId,
+  });
+}
+
 // ============ MEAL LOGS ============
 export function useMealLogs(date?: string) {
   const { user } = useAuth();
