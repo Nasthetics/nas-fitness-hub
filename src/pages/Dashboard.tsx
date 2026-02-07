@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, subDays } from 'date-fns';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, 
-  Apple, 
   Pill, 
-  TrendingUp, 
   PlayCircle,
   Scale,
   Target,
@@ -26,6 +24,7 @@ import {
   useProfile
 } from '@/hooks/use-fitness-data';
 import { WORKOUT_DAY_INFO } from '@/lib/types';
+import { BodyDiagram } from '@/components/anatomy/BodyDiagram';
 import { 
   BarChart, 
   Bar, 
@@ -155,7 +154,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Today's Workout Card */}
+      {/* Today's Workout Card with Anatomy Preview */}
       <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
@@ -171,24 +170,49 @@ export default function Dashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          {todayWorkout ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {todayWorkout.exercise_logs?.length || 0} exercises
-                </span>
-                <span className="text-lg font-semibold text-primary">
-                  {workoutCompletion}% Complete
-                </span>
+          {todayWorkout?.template ? (
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Anatomy Preview */}
+              <div className="flex justify-center md:justify-start">
+                <BodyDiagram
+                  selectedMuscle={
+                    todayWorkout.template.day_type === 'chest_back' ? 'chest' :
+                    todayWorkout.template.day_type === 'shoulders_arms' ? 'shoulders' :
+                    todayWorkout.template.day_type === 'legs' ? 'quadriceps' :
+                    null
+                  }
+                  size="sm"
+                  interactive={false}
+                />
               </div>
-              <Progress value={workoutCompletion} className="h-3" />
-              <Button 
-                onClick={() => navigate('/workouts')} 
-                variant="secondary" 
-                className="w-full"
-              >
-                {workoutCompletion === 0 ? 'Start Workout' : 'Continue Workout'}
-              </Button>
+              
+              {/* Workout Progress */}
+              <div className="flex-1 space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Target Muscles: {WORKOUT_DAY_INFO[todayWorkout.template.day_type].muscles.join(', ')}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {todayWorkout.exercise_logs?.length || 0} exercises planned
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-semibold text-primary">{workoutCompletion}%</span>
+                  </div>
+                  <Progress value={workoutCompletion} className="h-3" />
+                </div>
+                
+                <Button 
+                  onClick={() => navigate('/workouts')} 
+                  variant="secondary" 
+                  className="w-full"
+                >
+                  {workoutCompletion === 0 ? 'Start Workout' : 'Continue Workout'}
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="text-center py-4">
