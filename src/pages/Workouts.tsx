@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import {
   Settings
 } from 'lucide-react';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
+import { RestTimer } from '@/components/workouts/RestTimer';
+import { PRCelebration } from '@/components/workouts/PRCelebration';
 import { 
   useWorkoutTemplates, 
   useWorkoutLogs,
@@ -32,6 +34,8 @@ import { useToast } from '@/hooks/use-toast';
 import { WorkoutMusclePreview } from '@/components/workouts/WorkoutMusclePreview';
 import { EnhancedExerciseCard } from '@/components/workouts/EnhancedExerciseCard';
 import { WorkoutTemplateSetup } from '@/components/workouts/WorkoutTemplateSetup';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Workouts() {
   const { toast } = useToast();
