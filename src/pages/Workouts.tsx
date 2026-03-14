@@ -13,7 +13,6 @@ import {
   Settings
 } from 'lucide-react';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
-} from 'lucide-react';
 import { 
   useWorkoutTemplates, 
   useWorkoutLogs,
