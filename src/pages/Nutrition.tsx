@@ -15,6 +15,7 @@ import { MealTemplates } from '@/components/nutrition/MealTemplates';
 import { FoodCategoryTabs } from '@/components/nutrition/FoodCategoryTabs';
 import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState';
 import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
+import { WaterTracker } from '@/components/nutrition/WaterTracker';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
