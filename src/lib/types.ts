@@ -125,6 +125,7 @@ export interface SetLog {
   reps: number | null;
   weight_kg: number | null;
   rpe: number | null;
+  rir: number | null;
   rest_seconds: number | null;
   notes: string | null;
   is_pr: boolean;
