@@ -1,17 +1,19 @@
 import { useState, useMemo } from 'react';
 import { format, subDays } from 'date-fns';
-import { Plus, Scale, Ruler, Camera, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Scale, Ruler, Camera, TrendingUp, TrendingDown, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { BulkQualityCard } from '@/components/progress/BulkQualityCard';
 import { useBodyMetrics, useCreateBodyMetric } from '@/hooks/use-fitness-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function Progress() {
