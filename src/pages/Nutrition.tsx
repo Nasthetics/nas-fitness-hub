@@ -14,6 +14,7 @@ import { MacroDonutChart } from '@/components/nutrition/MacroDonutChart';
 import { MealTemplates } from '@/components/nutrition/MealTemplates';
 import { FoodCategoryTabs } from '@/components/nutrition/FoodCategoryTabs';
 import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState';
+import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
