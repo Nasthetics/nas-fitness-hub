@@ -156,11 +156,70 @@ export default function Workouts() {
   const handleAddSet = async (data: Omit<SetLog, 'id' | 'created_at'>) => {
     await createSetLog.mutateAsync(data);
     refetchTodayWorkout();
+    // Start rest timer
+    setRestTimerSeconds(data.rest_seconds || 90);
+    setRestTimerActive(true);
   };
 
   const handleUpdateSet = async (setId: string, updates: Partial<SetLog>) => {
     await updateSetLog.mutateAsync({ id: setId, ...updates });
     refetchTodayWorkout();
+
+    // Check for PR if weight or reps updated
+    if (updates.weight_kg || updates.reps) {
+      checkForPR(setId, updates);
+    }
+  };
+
+  const checkForPR = async (setId: string, updates: Partial<SetLog>) => {
+    try {
+      // Get the current set data
+      const currentSet = currentWorkout?.exercise_logs?.flatMap(el => el.set_logs || []).find(s => s.id === setId);
+      if (!currentSet) return;
+      
+      const exerciseLog = currentWorkout?.exercise_logs?.find(el => el.set_logs?.some(s => s.id === setId));
+      if (!exerciseLog || !user) return;
+      
+      const weight = updates.weight_kg ?? currentSet.weight_kg ?? 0;
+      const reps = updates.reps ?? currentSet.reps ?? 0;
+      if (weight <= 0 || reps <= 0) return;
+
+      // Check previous best for this exercise (1RM equivalent using Epley formula)
+      const estimated1RM = weight * (1 + reps / 30);
+      
+      const { data: prevPRs } = await supabase
+        .from('pr_history')
+        .select('weight_kg, reps')
+        .eq('user_id', user.id)
+        .eq('exercise_id', exerciseLog.exercise_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const prevBest = prevPRs?.[0];
+      const prevEstimated1RM = prevBest ? Number(prevBest.weight_kg) * (1 + Number(prevBest.reps) / 30) : 0;
+
+      if (estimated1RM > prevEstimated1RM) {
+        // New PR!
+        await supabase.from('pr_history').insert({
+          user_id: user.id,
+          exercise_id: exerciseLog.exercise_id,
+          pr_type: reps <= 1 ? '1rm' : reps <= 3 ? '3rm' : reps <= 5 ? '5rm' : 'volume',
+          weight_kg: weight,
+          reps: reps,
+          previous_weight_kg: prevBest ? Number(prevBest.weight_kg) : null,
+          previous_reps: prevBest ? Number(prevBest.reps) : null,
+        });
+
+        setPrCelebration({
+          show: true,
+          exerciseName: exerciseLog.exercise?.name || 'Exercise',
+          oldRecord: prevBest ? `${prevBest.weight_kg}kg × ${prevBest.reps}` : 'None',
+          newRecord: `${weight}kg × ${reps}`,
+        });
+      }
+    } catch (e) {
+      console.error('PR check error:', e);
+    }
   };
 
   const handleDeleteSet = async (setId: string) => {
