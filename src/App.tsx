@@ -17,6 +17,7 @@ import Recovery from "./pages/Recovery";
 import Periodization from "./pages/Periodization";
 import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
+import Coach from "./pages/Coach";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="progress" element={<Progress />} />
               <Route path="recovery" element={<Recovery />} />
               <Route path="periodization" element={<Periodization />} />
+              <Route path="coach" element={<Coach />} />
               <Route path="settings" element={<Settings />} />
               <Route path="reports" element={<Reports />} />
             </Route>

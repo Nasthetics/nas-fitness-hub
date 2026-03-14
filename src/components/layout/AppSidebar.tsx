@@ -46,6 +46,7 @@ const mainNavItems = [
 const advancedNavItems = [
   { title: 'Recovery', url: '/recovery', icon: Heart },
   { title: 'Periodization', url: '/periodization', icon: Calendar },
+  { title: 'AI Coach', url: '/coach', icon: Bot },
   { title: 'Reports', url: '/reports', icon: FileText },
   { title: 'Settings', url: '/settings', icon: Settings },
 ];

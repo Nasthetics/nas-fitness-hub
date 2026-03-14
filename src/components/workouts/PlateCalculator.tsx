@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 
 const BAR_WEIGHT = 20;
 const AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+const PRESETS = [60, 80, 100, 120, 140, 160];
 
 const PLATE_COLORS: Record<number, string> = {
   25: 'bg-red-500',
@@ -57,6 +58,23 @@ export function PlateCalculator() {
           <DialogTitle>Plate Calculator</DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
+          {/* Quick Presets */}
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">Quick Presets</Label>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map(w => (
+                <Button
+                  key={w}
+                  variant={targetWeight === w ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTargetWeight(w)}
+                >
+                  {w}kg
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Target Weight (kg)</Label>
             <Input
@@ -78,7 +96,6 @@ export function PlateCalculator() {
 
               {/* Visual plate diagram */}
               <div className="flex items-center justify-center gap-1 py-4">
-                {/* Left plates */}
                 {[...plates].reverse().map((plate, i) => (
                   <div
                     key={`l-${i}`}
@@ -91,9 +108,7 @@ export function PlateCalculator() {
                     {plate}
                   </div>
                 ))}
-                {/* Bar */}
                 <div className="bg-muted-foreground/50 rounded-full w-16 h-3" />
-                {/* Right plates */}
                 {plates.map((plate, i) => (
                   <div
                     key={`r-${i}`}
