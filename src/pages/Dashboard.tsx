@@ -1,44 +1,26 @@
 import { useMemo } from 'react';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { format, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Dumbbell, 
-  Pill, 
-  PlayCircle,
-  Scale,
-  Target,
-  Flame,
-  Zap
+  Dumbbell, Pill, PlayCircle, Scale, Flame, Zap, Droplets,
+  Heart, Apple, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  useTodayWorkout, 
-  useWorkoutLogs, 
-  useMealLogs, 
-  useSupplements, 
-  useSupplementLogs,
-  useBodyMetrics,
-  useProfile
+  useTodayWorkout, useWorkoutLogs, useMealLogs, 
+  useSupplements, useSupplementLogs, useBodyMetrics, useProfile
 } from '@/hooks/use-fitness-data';
-import { WORKOUT_DAY_INFO } from '@/lib/types';
-import { BodyDiagram } from '@/components/anatomy/BodyDiagram';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid
-} from 'recharts';
+import { WORKOUT_DAY_INFO, type WorkoutDayType } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const today = format(new Date(), 'yyyy-MM-dd');
   const weekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
   const weekEnd = format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
@@ -51,34 +33,46 @@ export default function Dashboard() {
   const { data: bodyMetrics } = useBodyMetrics(30);
   const { data: profile } = useProfile();
 
-  // Calculate weekly workout stats
-  const weeklyStats = useMemo(() => {
-    if (!weeklyWorkouts) return { completed: 0, planned: 6, setsByMuscle: [] };
-    
-    const completed = weeklyWorkouts.filter(w => w.completed).length;
-    
-    // Count sets by muscle group
-    const muscleSetCounts: Record<string, number> = {};
-    weeklyWorkouts.forEach(workout => {
-      workout.exercise_logs?.forEach(exerciseLog => {
-        const muscleName = (exerciseLog.exercise as any)?.primary?.name || 'Other';
-        const setCount = exerciseLog.set_logs?.length || 0;
-        muscleSetCounts[muscleName] = (muscleSetCounts[muscleName] || 0) + setCount;
-      });
-    });
-    
-    const setsByMuscle = Object.entries(muscleSetCounts).map(([muscle, sets]) => ({
-      muscle,
-      sets,
-    })).sort((a, b) => b.sets - a.sets);
-    
-    return { completed, planned: 6, setsByMuscle };
-  }, [weeklyWorkouts]);
+  // Water today
+  const { data: waterLogs = [] } = useQuery({
+    queryKey: ['water-logs', user?.id, today],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('water_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('log_date', today);
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!user,
+  });
+  const waterMl = waterLogs.reduce((s: number, l: any) => s + (l.amount_ml || 0), 0);
 
-  // Calculate today's nutrition
+  // Recovery score today
+  const { data: todayRecovery } = useQuery({
+    queryKey: ['recovery-today', user?.id, today],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from('recovery_checkins')
+        .select('recovery_score')
+        .eq('user_id', user.id)
+        .eq('checkin_date', today)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isTrainingDay = todayWorkout?.template?.day_type !== 'rest';
+  const targetCalories = isTrainingDay ? (profile?.training_day_calories || 2556) : (profile?.rest_day_calories || 2200);
+  const targetProtein = isTrainingDay ? (profile?.training_day_protein || 245) : (profile?.rest_day_protein || 180);
+  const waterTarget = profile?.water_target_ml || 4000;
+
   const nutritionStats = useMemo(() => {
     if (!todayMeals) return { calories: 0, protein: 0, carbs: 0, fats: 0 };
-    
     return todayMeals.reduce((acc, meal) => {
       meal.meal_items?.forEach(item => {
         acc.calories += Number(item.calories) || 0;
@@ -90,331 +84,220 @@ export default function Dashboard() {
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
   }, [todayMeals]);
 
-  // Determine if today is training day
-  const isTrainingDay = todayWorkout?.template?.day_type !== 'rest';
-  const targetCalories = isTrainingDay 
-    ? (profile?.training_day_calories || 2800) 
-    : (profile?.rest_day_calories || 2200);
-  const targetProtein = isTrainingDay 
-    ? (profile?.training_day_protein || 200) 
-    : (profile?.rest_day_protein || 180);
+  const activeSupps = supplements?.filter(s => s.is_active) || [];
+  const takenCount = supplementLogs?.filter(l => l.taken).length || 0;
+  const workoutDone = todayWorkout?.completed || false;
 
-  // Supplements adherence
-  const supplementStats = useMemo(() => {
-    const activeSupplements = supplements?.filter(s => s.is_active) || [];
-    const takenToday = supplementLogs?.filter(l => l.taken).length || 0;
-    return { total: activeSupplements.length, taken: takenToday };
-  }, [supplements, supplementLogs]);
+  // Greeting
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Weight trend data
-  const weightTrendData = useMemo(() => {
-    if (!bodyMetrics) return [];
-    return bodyMetrics
-      .filter(m => m.weight_kg)
-      .slice(0, 30)
-      .reverse()
-      .map(m => ({
-        date: format(new Date(m.recorded_date), 'MMM d'),
-        weight: Number(m.weight_kg),
-      }));
-  }, [bodyMetrics]);
+  // Recovery score color
+  const recoveryScore = todayRecovery?.recovery_score || 0;
+  const recoveryColor = recoveryScore >= 85 ? 'text-green-500' : recoveryScore >= 65 ? 'text-yellow-500' : recoveryScore >= 40 ? 'text-orange-500' : 'text-red-500';
+  const recoveryBg = recoveryScore >= 85 ? 'bg-green-500/10' : recoveryScore >= 65 ? 'bg-yellow-500/10' : recoveryScore >= 40 ? 'bg-orange-500/10' : 'bg-red-500/10';
 
-  // Today's workout completion
-  const workoutCompletion = useMemo(() => {
-    if (!todayWorkout?.exercise_logs) return 0;
-    const totalExercises = todayWorkout.exercise_logs.length;
-    if (totalExercises === 0) return 0;
-    const completedExercises = todayWorkout.exercise_logs.filter(
-      el => el.set_logs && el.set_logs.length > 0
-    ).length;
-    return Math.round((completedExercises / totalExercises) * 100);
-  }, [todayWorkout]);
+  // Progress ring helper
+  const Ring = ({ value, max, size = 80, color, label }: { value: number; max: number; size?: number; color: string; label: string }) => {
+    const sw = 6;
+    const r = (size - sw) / 2;
+    const c = r * 2 * Math.PI;
+    const pct = Math.min(value / max, 1);
+    const off = c - pct * c;
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <div className="relative" style={{ width: size, height: size }}>
+          <svg width={size} height={size} className="-rotate-90">
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={sw} />
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round" className="transition-all duration-700" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-sm font-bold">{Math.round(pct * 100)}%</span>
+          </div>
+        </div>
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-in">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {format(new Date(), 'EEEE, MMMM d, yyyy')}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => navigate('/workouts')} size="lg" className="gap-2">
-            <PlayCircle className="h-4 w-4" />
-            Start Workout
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/nutrition')}>
-            Log Meal
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/progress')}>
-            Record Weight
-          </Button>
-        </div>
+      {/* Greeting */}
+      <div>
+        <h1 className="text-3xl font-bold">{greeting}, {profile?.display_name || 'Nas'} 💪</h1>
+        <p className="text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
       </div>
 
-      {/* Today's Workout Card with Anatomy Preview */}
-      <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Dumbbell className="h-5 w-5 text-primary" />
-              Today's Workout
-            </CardTitle>
-            {todayWorkout?.template && (
-              <Badge className={WORKOUT_DAY_INFO[todayWorkout.template.day_type].color}>
-                {WORKOUT_DAY_INFO[todayWorkout.template.day_type].label}
-              </Badge>
-            )}
+      {/* 5 Progress Rings */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-around flex-wrap gap-4">
+            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" />
+            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" />
+            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" />
+            <Ring value={takenCount} max={activeSupps.length || 1} color="#a855f7" label="Supps" />
+            <Ring value={workoutDone ? 1 : 0} max={1} color="#22c55e" label="Workout" />
           </div>
-        </CardHeader>
-        <CardContent>
-          {todayWorkout?.template ? (
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Anatomy Preview */}
-              <div className="flex justify-center md:justify-start">
-                <BodyDiagram
-                  selectedMuscle={
-                    todayWorkout.template.day_type === 'chest_back' ? 'chest' :
-                    todayWorkout.template.day_type === 'shoulders_arms' ? 'shoulders' :
-                    todayWorkout.template.day_type === 'legs' ? 'quadriceps' :
-                    null
-                  }
-                  size="sm"
-                  interactive={false}
-                />
-              </div>
-              
-              {/* Workout Progress */}
-              <div className="flex-1 space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    Target Muscles: {WORKOUT_DAY_INFO[todayWorkout.template.day_type].muscles.join(', ')}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {todayWorkout.exercise_logs?.length || 0} exercises planned
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-semibold text-primary">{workoutCompletion}%</span>
-                  </div>
-                  <Progress value={workoutCompletion} className="h-3" />
-                </div>
-                
-                <Button 
-                  onClick={() => navigate('/workouts')} 
-                  variant="secondary" 
-                  className="w-full"
-                >
-                  {workoutCompletion === 0 ? 'Start Workout' : 'Continue Workout'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground mb-4">No workout planned for today</p>
-              <Button onClick={() => navigate('/workouts')}>
-                Create Workout
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Weekly Training */}
+      {/* Recovery Score + Today's Workout */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Recovery */}
+        <Card className={recoveryBg}>
+          <CardContent className="pt-6 flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card">
+              <Heart className={`h-8 w-8 ${recoveryColor}`} />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Recovery Score</p>
+              <p className={`text-3xl font-bold ${recoveryColor}`}>
+                {todayRecovery ? recoveryScore : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {!todayRecovery ? 'No check-in today' : 
+                  recoveryScore >= 85 ? 'Push Hard 🔥' : 
+                  recoveryScore >= 65 ? 'Normal Session' : 
+                  recoveryScore >= 40 ? 'Reduce Volume 20%' : 'Active Recovery Only'}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/recovery')}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Today's Workout */}
+        <Card className="border-primary/20">
+          <CardContent className="pt-6 flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+              <Dumbbell className="h-8 w-8 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Today's Workout</p>
+              {todayWorkout?.template ? (
+                <>
+                  <p className="text-lg font-bold">
+                    {WORKOUT_DAY_INFO[todayWorkout.template.day_type as WorkoutDayType]?.label || 'Workout'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {todayWorkout.completed ? '✅ Completed' : `${todayWorkout.exercise_logs?.length || 0} exercises`}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg font-semibold text-muted-foreground">No workout planned</p>
+              )}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/workouts')}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-3 gap-3">
+        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => navigate('/nutrition')}>
+          <Apple className="h-5 w-5 text-green-500" />
+          <span className="text-xs">Log Meal</span>
+        </Button>
+        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => navigate('/workouts')}>
+          <PlayCircle className="h-5 w-5 text-primary" />
+          <span className="text-xs">Start Workout</span>
+        </Button>
+        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => navigate('/supplements')}>
+          <Pill className="h-5 w-5 text-purple-400" />
+          <span className="text-xs">Check Supps</span>
+        </Button>
+      </div>
+
+      {/* Daily Stats Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Flame className="h-3 w-3 text-orange-500" />
+              <span className="text-xs font-medium">Calories</span>
+            </div>
+            <div className="text-xl font-bold">{Math.round(nutritionStats.calories)}</div>
+            <Progress value={Math.min((nutritionStats.calories / targetCalories) * 100, 100)} className="h-1.5 mt-2" />
+            <span className="text-[10px] text-muted-foreground">/ {targetCalories}</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Zap className="h-3 w-3 text-red-500" />
+              <span className="text-xs font-medium">Protein</span>
+            </div>
+            <div className="text-xl font-bold">{Math.round(nutritionStats.protein)}g</div>
+            <Progress value={Math.min((nutritionStats.protein / targetProtein) * 100, 100)} className="h-1.5 mt-2" />
+            <span className="text-[10px] text-muted-foreground">/ {targetProtein}g</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Droplets className="h-3 w-3 text-blue-500" />
+              <span className="text-xs font-medium">Water</span>
+            </div>
+            <div className="text-xl font-bold">{(waterMl / 1000).toFixed(1)}L</div>
+            <Progress value={Math.min((waterMl / waterTarget) * 100, 100)} className="h-1.5 mt-2" />
+            <span className="text-[10px] text-muted-foreground">/ {waterTarget / 1000}L</span>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Pill className="h-3 w-3 text-purple-500" />
+              <span className="text-xs font-medium">Supplements</span>
+            </div>
+            <div className="text-xl font-bold">{takenCount}/{activeSupps.length}</div>
+            <Progress value={activeSupps.length > 0 ? (takenCount / activeSupps.length) * 100 : 0} className="h-1.5 mt-2" />
+            <span className="text-[10px] text-muted-foreground">taken today</span>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Weight + Weekly Training */}
+      <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
+            <CardTitle className="text-base flex items-center gap-2">
+              <Scale className="h-4 w-4" />
+              Latest Weight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {bodyMetrics?.[0]?.weight_kg ? (
+              <div>
+                <span className="text-3xl font-bold">{bodyMetrics[0].weight_kg} kg</span>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {format(new Date(bodyMetrics[0].recorded_date), 'MMM d, yyyy')}
+                </p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No weight data yet</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Dumbbell className="h-4 w-4" />
               Weekly Training
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {weeklyStats.completed}/{weeklyStats.planned}
+            <div className="text-3xl font-bold">
+              {weeklyWorkouts?.filter(w => w.completed).length || 0}/6
             </div>
             <Progress 
-              value={(weeklyStats.completed / weeklyStats.planned) * 100} 
-              className="mt-2 h-2" 
+              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 6) * 100} 
+              className="h-2 mt-2" 
             />
-            <p className="text-xs text-muted-foreground mt-2">
-              workouts completed this week
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Calories */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Flame className="h-4 w-4 text-warning" />
-              Calories
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(nutritionStats.calories)}
-              <span className="text-sm font-normal text-muted-foreground">
-                /{targetCalories}
-              </span>
-            </div>
-            <Progress 
-              value={Math.min((nutritionStats.calories / targetCalories) * 100, 100)} 
-              className="mt-2 h-2" 
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              {isTrainingDay ? 'Training day target' : 'Rest day target'}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Protein */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Zap className="h-4 w-4 text-info" />
-              Protein
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.round(nutritionStats.protein)}g
-              <span className="text-sm font-normal text-muted-foreground">
-                /{targetProtein}g
-              </span>
-            </div>
-            <Progress 
-              value={Math.min((nutritionStats.protein / targetProtein) * 100, 100)} 
-              className="mt-2 h-2" 
-            />
-          </CardContent>
-        </Card>
-
-        {/* Supplements */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Pill className="h-4 w-4 text-purple-400" />
-              Supplements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {supplementStats.taken}/{supplementStats.total}
-            </div>
-            <Progress 
-              value={supplementStats.total > 0 
-                ? (supplementStats.taken / supplementStats.total) * 100 
-                : 0
-              } 
-              className="mt-2 h-2" 
-            />
-            <p className="text-xs text-muted-foreground mt-2">
-              taken today
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Sets by Muscle Group */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Weekly Sets by Muscle Group</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {weeklyStats.setsByMuscle.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={weeklyStats.setsByMuscle} layout="vertical">
-                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis 
-                    type="category" 
-                    dataKey="muscle" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={12}
-                    width={80}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="sets" 
-                    fill="hsl(var(--primary))" 
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
-                No workout data this week
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Weight Trend */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Scale className="h-4 w-4" />
-              Weight Trend (30 Days)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {weightTrendData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={weightTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))" 
-                    fontSize={12}
-                    domain={['dataMin - 1', 'dataMax + 1']}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="weight" 
-                    stroke="hsl(var(--primary))" 
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[250px] text-muted-foreground">
-                <Scale className="h-8 w-8 mb-2" />
-                <p>No weight data recorded</p>
-                <Button 
-                  variant="link" 
-                  onClick={() => navigate('/progress')}
-                  className="mt-2"
-                >
-                  Record your first weight
-                </Button>
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground mt-1">workouts this week</p>
           </CardContent>
         </Card>
       </div>
