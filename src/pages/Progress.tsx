@@ -339,6 +339,9 @@ export default function Progress() {
       {/* Bulk Quality Score */}
       <BulkQualityCard />
 
+      {/* PR Feed */}
+      <PRFeed />
+
       {/* Charts */}
       <Tabs defaultValue="weight" className="space-y-4">
         <TabsList>
