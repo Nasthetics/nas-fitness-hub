@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { BulkQualityCard } from '@/components/progress/BulkQualityCard';
 import { useBodyMetrics, useCreateBodyMetric } from '@/hooks/use-fitness-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -332,6 +333,9 @@ export default function Progress() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bulk Quality Score */}
+      <BulkQualityCard />
 
       {/* Charts */}
       <Tabs defaultValue="weight" className="space-y-4">

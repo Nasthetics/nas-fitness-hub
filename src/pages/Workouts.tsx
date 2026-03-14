@@ -12,6 +12,7 @@ import {
   PlayCircle,
   Settings
 } from 'lucide-react';
+import { PlateCalculator } from '@/components/workouts/PlateCalculator';
 import { 
   useWorkoutTemplates, 
   useWorkoutLogs,
@@ -176,15 +177,18 @@ export default function Workouts() {
             {format(selectedDate, 'EEEE, MMMM d, yyyy')}
           </p>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={() => setShowTemplateSetup(true)}
-          className="gap-2"
-        >
-          <Settings className="h-4 w-4" />
-          {hasTemplates ? 'Edit Split' : 'Set Up Split'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <PlateCalculator />
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowTemplateSetup(true)}
+            className="gap-2"
+          >
+            <Settings className="h-4 w-4" />
+            {hasTemplates ? 'Edit Split' : 'Set Up Split'}
+          </Button>
+        </div>
       </div>
 
       {/* Week Selector */}

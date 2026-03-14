@@ -13,6 +13,10 @@ import Exercises from "./pages/Exercises";
 import Nutrition from "./pages/Nutrition";
 import Supplements from "./pages/Supplements";
 import Progress from "./pages/Progress";
+import Recovery from "./pages/Recovery";
+import Periodization from "./pages/Periodization";
+import Settings from "./pages/Settings";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +46,10 @@ const App = () => (
               <Route path="supplements" element={<Supplements />} />
               <Route path="compounds" element={<div className="text-foreground">Compounds Reference - Coming Soon</div>} />
               <Route path="progress" element={<Progress />} />
+              <Route path="recovery" element={<Recovery />} />
+              <Route path="periodization" element={<Periodization />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="reports" element={<Reports />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

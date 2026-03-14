@@ -1,146 +1,211 @@
 
+# Nutrition Page Redesign
 
-# Nas Fitness OS - Full Feature Expansion
-
-This is a large expansion covering 9 feature areas. Here is the implementation plan broken into phases.
-
----
-
-## Database Changes Required
-
-### New Tables
-
-| Table | Purpose |
-|-------|---------|
-| `recovery_checkins` | Daily recovery check-in data (sleep, energy, stress, breathwork, score) |
-| `periodization_plans` | Mesocycle tracking (phase, start date, week number) |
-
-### Schema Modifications
-
-| Table | Change |
-|-------|--------|
-| `set_logs` | Add `rir` integer column (Reps In Reserve) |
-| `profiles` | Add `height_cm`, `body_fat_percent`, `lean_mass_kg`, `target_weight_gain_per_week`, `water_target_ml`, `ramadan_mode` columns |
-
-### Pre-loaded Data (via insert tool)
-
-- 14 supplements with correct timings (Ashwagandha, Opti-Men, Vit C, etc.)
-- Profile defaults: 95kg, 190cm, 14% BF, 81.7kg lean mass, 2556 kcal, 245.5g P, 189g C, 90.6g F
+This plan transforms the Nutrition page into a clearer, more organized experience with tabbed food categories, meal templates, and a visual macro breakdown.
 
 ---
 
-## New Pages & Routes
+## Current Issues
 
-| Route | Page | Feature |
-|-------|------|---------|
-| `/recovery` | Recovery.tsx | Daily 10-second check-in + recovery score + 7-day trend |
-| `/periodization` | Periodization.tsx | Mesocycle planner with phase progress bar |
-| `/settings` | Settings.tsx | Profile editor + Ramadan mode toggle |
-| `/reports` | Reports.tsx | Monthly performance report with export |
-
----
-
-## Feature Breakdown
-
-### 1. Supplement Timeline (Enhance existing Supplements page)
-- Regroup into Morning / During Workout / Post-Workout / With Meal / Evening / Pre-Sleep sections
-- Add RED warning badge for Metformin: "WITH MEALS ONLY - never fasted"
-- Add weekly adherence % calculation (query last 7 days of logs)
-- Add streak counter per supplement
-
-### 2. Adaptive Macro Engine (Add to Nutrition page)
-- Weekly weigh-in card showing 7-day average weight
-- Compare to previous week's average
-- Auto-suggest calorie adjustment: >0.5kg/week = -150kcal, <0.2kg/week = +150kcal
-- Target: +0.3kg/week clean bulk indicator
-
-### 3. Plate Calculator (Add to Workouts page)
-- Input field for target weight (kg)
-- Pure frontend calculation based on 20kg Olympic bar
-- Available plates: 25, 20, 15, 10, 5, 2.5, 1.25 kg
-- Show visual plate diagram per side
-
-### 4. RPE + RIR Logging (Enhance QuickSetInput)
-- Add RPE slider (1-10) and RIR dropdown (0-5) to each set row
-- RPE already exists in `set_logs`, just need to add RIR column and UI
-
-### 5. Periodization Planner (New page)
-- Display current mesocycle: Hypertrophy (W1-6), Strength (W7-10), Deload (W11), Test (W12)
-- Progress bar showing current week within phase
-- Phase-specific set/rep recommendations
-- Auto-suggest deload if average RPE >8 for 2 consecutive weeks (computed from set_logs)
-
-### 6. Recovery Screen (New page)
-- Quick check-in form: sleep hours, sleep quality (1-5), energy (1-5), stress (1-5), breathwork (yes/no)
-- Recovery Score formula: weighted average mapped to 0-100
-- Color-coded recommendation badge (Push Hard / Normal / Reduce Volume / Active Recovery)
-- 7-day trend line chart
-
-### 7. Body Progress (Enhance existing Progress page)
-- Weekly weigh-in card with lean mass vs fat mass breakdown
-- Bulk Quality Score (% of gain that is lean mass, green if >70%)
-- Alert banner if BF% trending above 16%
-- 12-month projection line based on current weekly rate
-
-### 8. Ramadan Mode (Settings page)
-- Toggle switch stored in profiles
-- When ON: show hardcoded Dubai prayer times
-- Shift supplement timings display (Metformin to Iftar/Suhoor, Magnesium to Suhoor, Creatine to post-Iftar)
-- Workout timing options (Pre-Iftar light, Post-Iftar performance, Post-Tarawih)
-- Hydration tracker: 4L between Iftar-Suhoor with interval reminders
-
-### 9. Monthly Performance Report (New page)
-- Computed from existing data: top PRs, strength deltas, volume progression, macro adherence %, supplement consistency %, body comp
-- Render as a styled card
-- Export as image using html2canvas
+| Problem | Impact |
+|---------|--------|
+| Food search shows random 10 items with no organization | Hard to find foods in 150+ database |
+| No category filtering | Users browse blindly |
+| No visual macro representation | Progress bars alone don't show distribution |
+| No quick-start options | New users unsure how to begin |
+| Training/Rest day logic unclear | Users don't understand target changes |
 
 ---
 
-## Files to Create
+## Solution Overview
+
+### 1. Tabbed Food Browser with Categories
+
+Replace the flat food list with a tabbed interface organized by category:
+
+| Tab | Foods | Icon |
+|-----|-------|------|
+| All | Full search | Search |
+| Protein | Chicken, Fish, Beef, etc. | Beef icon |
+| Carbs | Rice, Bread, Pasta | Wheat icon |
+| Dairy | Labneh, Halloumi, Yogurt | Milk icon |
+| Vegetables | Okra, Spinach, Tomatoes | Salad icon |
+| Fruits | Dates, Mango, Pomegranate | Apple icon |
+| Fats | Ghee, Tahini, Nuts | Droplets icon |
+| Snacks | Hummus, Falafel | Cookie icon |
+
+### 2. Meal Templates (Quick Add)
+
+Pre-built meal structures users can add with one click:
+
+| Template | Typical Foods |
+|----------|---------------|
+| Breakfast | Eggs, Oats, Fruit, Yogurt |
+| Pre-Workout | Banana, Rice, Chicken |
+| Post-Workout | Protein shake, Rice, Chicken |
+| Lunch | Rice, Protein, Vegetables |
+| Dinner | Protein, Vegetables, Fats |
+| Snack | Nuts, Dates, Hummus |
+
+### 3. Visual Macro Breakdown
+
+A donut/pie chart showing:
+- Current macro distribution (P/C/F percentages)
+- Remaining calories to target
+- Color-coded segments matching the macro cards
+
+### 4. Improved Empty State
+
+When no meals are logged, show:
+- Quick-start guide with 3 simple steps
+- "Add Your First Meal" prominent CTA
+- Suggested meal templates to get started
+
+---
+
+## UI Mockup
+
+```text
++------------------------------------------------------------------+
+|  Nutrition                                 [< Fri, Feb 7 >]       |
+|  [Training Day Badge]                                            |
++------------------------------------------------------------------+
+|                                                                   |
+|  +------------+  +------------+  +------------+  +------------+   |
+|  | Calories   |  | Protein    |  | Carbs      |  | Fats       |   |
+|  | 1,850      |  | 165g       |  | 180g       |  | 52g        |   |
+|  | ████████░░ |  | ████████░░ |  | ██████░░░░ |  | ██████░░░░ |   |
+|  | / 2,800    |  | / 200g     |  | / 300g     |  | / 80g      |   |
+|  +------------+  +------------+  +------------+  +------------+   |
+|                                                                   |
+|  +----------------------+  +------------------------------------+ |
+|  | MACRO BREAKDOWN      |  | QUICK ADD MEAL                     | |
+|  |     .-~~~-.          |  | [Breakfast] [Pre-Workout] [Lunch]  | |
+|  |   /  P:33% \         |  | [Post-Workout] [Dinner] [Snack]    | |
+|  |  |  C:39%   |        |  | [+ Custom Meal]                    | |
+|  |   \ F:28% /          |  |                                    | |
+|  |     '~~~'            |  |                                    | |
+|  | 950 kcal remaining   |  |                                    | |
+|  +----------------------+  +------------------------------------+ |
+|                                                                   |
+|  MEALS                                                            |
+|  +--------------------------------------------------------------+ |
+|  | Breakfast                          520 kcal | 42g protein    | |
+|  |  - Scrambled Eggs (150g)              210 kcal | 18g P       | |
+|  |  - Arabic Bread (80g)                 220 kcal | 7g P        | |
+|  |  - Labneh (50g)                       72 kcal | 4g P         | |
+|  |                                   [+ Add Food]                | |
+|  +--------------------------------------------------------------+ |
++------------------------------------------------------------------+
+```
+
+---
+
+## Food Search Dialog Redesign
+
+```text
++-----------------------------------------------+
+|  Add Food to Breakfast                        |
++-----------------------------------------------+
+|  [Search: ________________]                   |
+|                                               |
+|  [All] [Protein] [Carbs] [Dairy] [Veg] [...] |
+|                                               |
+|  +-------------------------------------------+|
+|  | Chicken Breast                      Protein|
+|  | 165 kcal | 31g P | 0g C | 4g F per 100g   |
+|  +-------------------------------------------+|
+|  | Hammour (Local Fish)                Protein|
+|  | 96 kcal | 20g P | 0g C | 1g F per 100g    |
+|  +-------------------------------------------+|
+|  | ...more results...                         |
++-----------------------------------------------+
+```
+
+---
+
+## Technical Implementation
+
+### Files to Create
 
 | File | Purpose |
 |------|---------|
-| `src/pages/Recovery.tsx` | Recovery check-in screen |
-| `src/pages/Periodization.tsx` | Mesocycle planner |
-| `src/pages/Settings.tsx` | Profile + Ramadan mode settings |
-| `src/pages/Reports.tsx` | Monthly performance report |
-| `src/components/workouts/PlateCalculator.tsx` | Plate calculator dialog |
-| `src/components/nutrition/AdaptiveMacroCard.tsx` | Weekly weight trend + calorie suggestions |
-| `src/components/progress/BulkQualityCard.tsx` | Lean mass tracking + quality score |
-| `src/components/supplements/SupplementWarningBadge.tsx` | Red Metformin warning badge |
-| `src/components/recovery/RecoveryCheckin.tsx` | Quick check-in form |
-| `src/components/recovery/RecoveryScoreCard.tsx` | Score display + recommendation |
-| `src/components/settings/RamadanMode.tsx` | Ramadan toggle + prayer times |
+| `src/components/nutrition/MacroDonutChart.tsx` | Pie/donut chart for macro visualization |
+| `src/components/nutrition/FoodCategoryTabs.tsx` | Tabbed food browser component |
+| `src/components/nutrition/MealTemplates.tsx` | Quick-add meal template buttons |
+| `src/components/nutrition/NutritionEmptyState.tsx` | Improved empty state with onboarding |
 
-## Files to Modify
+### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/App.tsx` | Add 4 new routes |
-| `src/components/layout/AppSidebar.tsx` | Add nav items (Recovery, Periodization, Settings, Reports) |
-| `src/pages/Supplements.tsx` | Add timeline grouping, warning badges, streak/adherence |
-| `src/pages/Nutrition.tsx` | Add AdaptiveMacroCard component |
-| `src/pages/Progress.tsx` | Add bulk quality score, BF% alert, projection |
-| `src/pages/Workouts.tsx` | Add PlateCalculator button |
-| `src/components/workouts/QuickSetInput.tsx` | Add RPE slider + RIR field |
-| `src/components/workouts/EnhancedExerciseCard.tsx` | Pass RPE/RIR through |
-| `src/hooks/use-fitness-data.ts` | Add hooks for recovery, periodization, weekly weight averages |
-| `src/lib/types.ts` | Add new types (RecoveryCheckin, PeriodizationPlan, etc.) |
+| `src/pages/Nutrition.tsx` | Integrate new components, add macro chart section |
+| `src/hooks/use-fitness-data.ts` | Add `useFoodsByCategory` hook for filtered queries |
+
+### Component Details
+
+#### MacroDonutChart
+- Uses Recharts PieChart with custom colors
+- Shows P/C/F distribution as percentages
+- Center text displays remaining calories
+- Responsive sizing
+
+#### FoodCategoryTabs
+- Horizontal scrollable tabs on mobile
+- Each tab filters foods by `category` field
+- Badge showing count per category
+- Combines with search for "Protein + chicken" type filtering
+
+#### MealTemplates
+- Grid of preset meal buttons
+- One-click creates meal with suggested name
+- Optional: pre-populate with common foods for that meal type
 
 ---
 
-## Implementation Priority
+## Data Flow
 
-1. **Database migrations** - New tables + column additions
-2. **Pre-load data** - 14 supplements + profile defaults
-3. **RPE/RIR** - Quick win, small UI change
-4. **Plate Calculator** - Pure frontend, no DB
-5. **Supplement Timeline** - Enhance existing page
-6. **Recovery Screen** - New page + table
-7. **Adaptive Macro Engine** - Computed from existing data
-8. **Body Progress** - Enhance existing page
-9. **Periodization Planner** - New page
-10. **Settings + Ramadan Mode** - New page
-11. **Monthly Report** - Computed, last since it aggregates everything
-12. **Sidebar + Routes** - Wire everything together
+```text
+User clicks "Add Food"
+        |
+        v
++------------------+
+| FoodCategoryTabs |
+|  - All (154)     |
+|  - Protein (42)  | <-- Filter by category
+|  - Carbs (25)    |
+|  - ...           |
++------------------+
+        |
+        v
++------------------+
+| Search + Filter  |
+| Combined Results |
++------------------+
+        |
+        v
++------------------+
+| Select Food      |
+| Enter Quantity   |
++------------------+
+        |
+        v
++------------------+
+| Add to Meal      |
+| Update Totals    |
++------------------+
+```
 
+---
+
+## Summary
+
+| Addition | Benefit |
+|----------|---------|
+| **Category tabs** | Browse 154 foods by type (Protein, Carbs, etc.) |
+| **Macro donut chart** | Visual breakdown of P/C/F distribution |
+| **Meal templates** | Quick-start with Breakfast, Lunch, Dinner presets |
+| **Improved empty state** | Clear onboarding for new users |
+| **Combined search + filter** | Find "Chicken" within "Protein" category |
+
+This redesign makes the nutrition tracking clearer and faster to use, especially with the expanded Dubai food database.
