@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { Plus, Pill, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pill, Check, ChevronLeft, ChevronRight, AlertTriangle, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,10 +12,24 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useSupplements, useCreateSupplement, useSupplementLogs, useToggleSupplementLog } from '@/hooks/use-fitness-data';
 import { TIMING_INFO, type TimingType } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { subDays } from 'date-fns';
 
 const TIMING_OPTIONS: TimingType[] = ['AM', 'PM', 'pre_workout', 'post_workout', 'with_meal'];
 
+const TIMELINE_SECTIONS = [
+  { key: 'AM', label: '🌅 Morning', icon: '☀️' },
+  { key: 'pre_workout', label: '⚡ During Workout', icon: '🏋️' },
+  { key: 'post_workout', label: '💪 Post-Workout', icon: '🔄' },
+  { key: 'with_meal', label: '🍽️ With Meal', icon: '🥗' },
+  { key: 'PM', label: '🌙 Evening / Pre-Sleep', icon: '😴' },
+  { key: 'anytime', label: '📋 Anytime', icon: '⏰' },
+];
+
 export default function Supplements() {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   
@@ -29,37 +43,61 @@ export default function Supplements() {
   const [newTiming, setNewTiming] = useState<TimingType[]>([]);
   const [newNotes, setNewNotes] = useState('');
 
+  // Fetch weekly logs for adherence/streak
+  const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
+  const { data: weeklyLogs = [] } = useQuery({
+    queryKey: ['supplement-logs-weekly', user?.id, sevenDaysAgo],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('supplement_logs')
+        .select('supplement_id, taken_date, taken')
+        .eq('user_id', user.id)
+        .gte('taken_date', sevenDaysAgo)
+        .eq('taken', true);
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
   // Active supplements only
   const activeSupplements = useMemo(() => 
     supplements.filter(s => s.is_active),
     [supplements]
   );
 
-  // Group supplements by timing - must be before any conditional returns
+  // Group supplements by timing
   const groupedByTiming = useMemo(() => {
-    const groups: Record<string, typeof activeSupplements> = {
-      'AM': [],
-      'pre_workout': [],
-      'with_meal': [],
-      'post_workout': [],
-      'PM': [],
-      'anytime': [],
-    };
+    const groups: Record<string, typeof activeSupplements> = {};
+    TIMELINE_SECTIONS.forEach(s => { groups[s.key] = []; });
     
     activeSupplements.forEach(supp => {
       if (!supp.timing || supp.timing.length === 0) {
         groups.anytime.push(supp);
       } else {
-        // Add to first timing group
         const primaryTiming = supp.timing[0];
         if (groups[primaryTiming]) {
           groups[primaryTiming].push(supp);
+        } else {
+          groups.anytime.push(supp);
         }
       }
     });
     
     return groups;
   }, [activeSupplements]);
+
+  // Weekly adherence per supplement
+  const getWeeklyAdherence = (supplementId: string) => {
+    const count = weeklyLogs.filter(l => l.supplement_id === supplementId).length;
+    return Math.round((count / 7) * 100);
+  };
+
+  // Streak (consecutive days taken - simplified)
+  const getStreak = (supplementId: string) => {
+    return weeklyLogs.filter(l => l.supplement_id === supplementId).length;
+  };
 
   // Get log status for each supplement
   const getLogStatus = (supplementId: string) => {
@@ -112,6 +150,8 @@ export default function Supplements() {
 
   const isToday = format(selectedDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
 
+  const isMetformin = (name: string) => name.toLowerCase().includes('metformin');
+
   if (supplementsLoading || logsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -125,9 +165,9 @@ export default function Supplements() {
       {/* Header with date navigation */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Supplements</h1>
+          <h1 className="text-3xl font-bold text-foreground">Supplement Timeline</h1>
           <p className="text-muted-foreground mt-1">
-            Track your daily supplement intake
+            Daily checklist sorted by timing
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -144,27 +184,46 @@ export default function Supplements() {
       </div>
 
       {/* Adherence Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-2xl font-bold">
-                {takenCount} / {totalActive}
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-2xl font-bold">
+                  {takenCount} / {totalActive}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  supplements taken {isToday ? 'today' : 'that day'}
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">
-                supplements taken {isToday ? 'today' : 'that day'}
-              </div>
+              {adherencePercent === 100 && (
+                <div className="flex items-center gap-2 text-green-500">
+                  <Check className="h-5 w-5" />
+                  <span className="font-medium">All done!</span>
+                </div>
+              )}
             </div>
-            {adherencePercent === 100 && (
-              <div className="flex items-center gap-2 text-green-500">
-                <Check className="h-5 w-5" />
-                <span className="font-medium">All done!</span>
-              </div>
-            )}
-          </div>
-          <Progress value={adherencePercent} className="h-3" />
-        </CardContent>
-      </Card>
+            <Progress value={adherencePercent} className="h-3" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Flame className="h-5 w-5 text-primary" />
+              <span className="font-medium">Weekly Adherence</span>
+            </div>
+            <div className="text-2xl font-bold">
+              {totalActive > 0 
+                ? Math.round(weeklyLogs.length / (totalActive * 7) * 100) 
+                : 0}%
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {weeklyLogs.length} doses logged this week
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Add Supplement Dialog */}
       <Dialog>
@@ -232,27 +291,30 @@ export default function Supplements() {
         </DialogContent>
       </Dialog>
 
-      {/* Supplements by Timing */}
-      {Object.entries(groupedByTiming).map(([timing, supps]) => {
+      {/* Timeline Sections */}
+      {TIMELINE_SECTIONS.map(section => {
+        const supps = groupedByTiming[section.key] || [];
         if (supps.length === 0) return null;
         
-        const timingLabel = timing === 'anytime' ? 'Anytime' : TIMING_INFO[timing as TimingType]?.time || timing;
-        
         return (
-          <Card key={timing}>
+          <Card key={section.key}>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{timingLabel}</CardTitle>
+              <CardTitle className="text-lg">{section.label}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {supps.map(supp => {
                   const isTaken = getLogStatus(supp.id);
+                  const adherence = getWeeklyAdherence(supp.id);
+                  const streak = getStreak(supp.id);
+                  const isMetforminItem = isMetformin(supp.name);
                   
                   return (
                     <div
                       key={supp.id}
                       className={`flex items-center gap-4 p-4 rounded-lg border transition-colors ${
-                        isTaken ? 'bg-primary/10 border-primary/30' : 'bg-card'
+                        isTaken ? 'bg-primary/10 border-primary/30' : 
+                        isMetforminItem ? 'bg-red-500/5 border-red-500/30' : 'bg-card'
                       }`}
                     >
                       <Checkbox
@@ -261,8 +323,16 @@ export default function Supplements() {
                         className="h-6 w-6"
                       />
                       <div className="flex-1">
-                        <div className={`font-medium ${isTaken ? 'line-through text-muted-foreground' : ''}`}>
-                          {supp.name}
+                        <div className="flex items-center gap-2">
+                          <span className={`font-medium ${isTaken ? 'line-through text-muted-foreground' : ''}`}>
+                            {supp.name}
+                          </span>
+                          {isMetforminItem && (
+                            <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              WITH MEALS ONLY - never fasted
+                            </Badge>
+                          )}
                         </div>
                         {supp.purpose && (
                           <div className="text-sm text-muted-foreground">
@@ -270,15 +340,10 @@ export default function Supplements() {
                           </div>
                         )}
                       </div>
-                      {supp.timing && supp.timing.length > 1 && (
-                        <div className="flex gap-1">
-                          {supp.timing.map(t => (
-                            <Badge key={t} variant="outline" className="text-xs">
-                              {TIMING_INFO[t]?.time}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span title="Weekly adherence">{adherence}%</span>
+                        <span title="Streak">🔥 {streak}d</span>
+                      </div>
                     </div>
                   );
                 })}

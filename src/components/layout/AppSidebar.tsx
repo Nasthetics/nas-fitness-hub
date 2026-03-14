@@ -11,6 +11,9 @@ import {
   LogOut,
   User,
   Settings,
+  Heart,
+  Calendar,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,9 +42,48 @@ const mainNavItems = [
   { title: 'Progress', url: '/progress', icon: TrendingUp },
 ];
 
+const advancedNavItems = [
+  { title: 'Recovery', url: '/recovery', icon: Heart },
+  { title: 'Periodization', url: '/periodization', icon: Calendar },
+  { title: 'Reports', url: '/reports', icon: FileText },
+  { title: 'Settings', url: '/settings', icon: Settings },
+];
+
 export function AppSidebar() {
   const location = useLocation();
   const { user, signOut } = useAuth();
+
+  const renderNavGroup = (items: typeof mainNavItems, label: string) => (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-xs uppercase tracking-wider text-sidebar-foreground/50">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => {
+            const isActive = location.pathname === item.url;
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive}
+                  className={cn(
+                    'transition-all duration-200',
+                    isActive && 'bg-sidebar-accent text-primary font-medium'
+                  )}
+                >
+                  <Link to={item.url}>
+                    <item.icon className={cn('h-4 w-4', isActive && 'text-primary')} />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
 
   return (
     <Sidebar>
@@ -58,35 +100,8 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-sidebar-foreground/50">
-            Modules
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavItems.map((item) => {
-                const isActive = location.pathname === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={isActive}
-                      className={cn(
-                        'transition-all duration-200',
-                        isActive && 'bg-sidebar-accent text-primary font-medium'
-                      )}
-                    >
-                      <Link to={item.url}>
-                        <item.icon className={cn('h-4 w-4', isActive && 'text-primary')} />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {renderNavGroup(mainNavItems, 'Modules')}
+        {renderNavGroup(advancedNavItems, 'Advanced')}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-4">

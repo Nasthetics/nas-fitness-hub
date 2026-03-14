@@ -334,6 +334,9 @@ export default function Progress() {
         </Card>
       </div>
 
+      {/* Bulk Quality Score */}
+      <BulkQualityCard />
+
       {/* Charts */}
       <Tabs defaultValue="weight" className="space-y-4">
         <TabsList>

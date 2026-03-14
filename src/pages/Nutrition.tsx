@@ -224,8 +224,8 @@ export default function Nutrition() {
         </Card>
       </div>
 
-      {/* Macro Chart + Meal Templates Row */}
-      <div className="grid md:grid-cols-2 gap-4">
+      {/* Macro Chart + Adaptive Engine + Meal Templates */}
+      <div className="grid md:grid-cols-3 gap-4">
         <MacroDonutChart
           protein={dailyTotals.protein}
           carbs={dailyTotals.carbs}
@@ -233,6 +233,7 @@ export default function Nutrition() {
           targetCalories={targets.calories}
           currentCalories={dailyTotals.calories}
         />
+        <AdaptiveMacroCard />
         <MealTemplates
           onSelectTemplate={handleQuickAddMeal}
           onCustomMeal={() => setIsAddMealDialogOpen(true)}
