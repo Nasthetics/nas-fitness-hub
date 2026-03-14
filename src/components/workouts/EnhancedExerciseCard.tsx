@@ -63,6 +63,7 @@ export function EnhancedExerciseCard({
       reps: lastSet?.reps || prevSet?.reps || templateExercise?.default_reps || 10,
       weight_kg: lastSet?.weight_kg || prevSet?.weight_kg || 0,
       rpe: null,
+      rir: null,
       rest_seconds: templateExercise?.default_rest_seconds || 90,
       notes: null,
       is_pr: false,

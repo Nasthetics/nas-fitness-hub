@@ -15,6 +15,7 @@ import { MealTemplates } from '@/components/nutrition/MealTemplates';
 import { FoodCategoryTabs } from '@/components/nutrition/FoodCategoryTabs';
 import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState';
 import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
+import { WaterTracker } from '@/components/nutrition/WaterTracker';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
@@ -224,8 +225,8 @@ export default function Nutrition() {
         </Card>
       </div>
 
-      {/* Macro Chart + Adaptive Engine + Meal Templates */}
-      <div className="grid md:grid-cols-3 gap-4">
+      {/* Macro Chart + Adaptive Engine + Water + Meal Templates */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MacroDonutChart
           protein={dailyTotals.protein}
           carbs={dailyTotals.carbs}
@@ -234,6 +235,7 @@ export default function Nutrition() {
           currentCalories={dailyTotals.calories}
         />
         <AdaptiveMacroCard />
+        <WaterTracker />
         <MealTemplates
           onSelectTemplate={handleQuickAddMeal}
           onCustomMeal={() => setIsAddMealDialogOpen(true)}

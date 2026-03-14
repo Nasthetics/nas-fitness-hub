@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import {
   Settings
 } from 'lucide-react';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
+import { RestTimer } from '@/components/workouts/RestTimer';
+import { PRCelebration } from '@/components/workouts/PRCelebration';
 import { 
   useWorkoutTemplates, 
   useWorkoutLogs,
@@ -32,12 +34,19 @@ import { useToast } from '@/hooks/use-toast';
 import { WorkoutMusclePreview } from '@/components/workouts/WorkoutMusclePreview';
 import { EnhancedExerciseCard } from '@/components/workouts/EnhancedExerciseCard';
 import { WorkoutTemplateSetup } from '@/components/workouts/WorkoutTemplateSetup';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Workouts() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
-  
+  const [restTimerActive, setRestTimerActive] = useState(false);
+  const [restTimerSeconds, setRestTimerSeconds] = useState(90);
+  const [prCelebration, setPrCelebration] = useState<{ show: boolean; exerciseName: string; oldRecord: string; newRecord: string }>({
+    show: false, exerciseName: '', oldRecord: '', newRecord: ''
+  });
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   
@@ -147,11 +156,70 @@ export default function Workouts() {
   const handleAddSet = async (data: Omit<SetLog, 'id' | 'created_at'>) => {
     await createSetLog.mutateAsync(data);
     refetchTodayWorkout();
+    // Start rest timer
+    setRestTimerSeconds(data.rest_seconds || 90);
+    setRestTimerActive(true);
   };
 
   const handleUpdateSet = async (setId: string, updates: Partial<SetLog>) => {
     await updateSetLog.mutateAsync({ id: setId, ...updates });
     refetchTodayWorkout();
+
+    // Check for PR if weight or reps updated
+    if (updates.weight_kg || updates.reps) {
+      checkForPR(setId, updates);
+    }
+  };
+
+  const checkForPR = async (setId: string, updates: Partial<SetLog>) => {
+    try {
+      // Get the current set data
+      const currentSet = currentWorkout?.exercise_logs?.flatMap(el => el.set_logs || []).find(s => s.id === setId);
+      if (!currentSet) return;
+      
+      const exerciseLog = currentWorkout?.exercise_logs?.find(el => el.set_logs?.some(s => s.id === setId));
+      if (!exerciseLog || !user) return;
+      
+      const weight = updates.weight_kg ?? currentSet.weight_kg ?? 0;
+      const reps = updates.reps ?? currentSet.reps ?? 0;
+      if (weight <= 0 || reps <= 0) return;
+
+      // Check previous best for this exercise (1RM equivalent using Epley formula)
+      const estimated1RM = weight * (1 + reps / 30);
+      
+      const { data: prevPRs } = await supabase
+        .from('pr_history')
+        .select('weight_kg, reps')
+        .eq('user_id', user.id)
+        .eq('exercise_id', exerciseLog.exercise_id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const prevBest = prevPRs?.[0];
+      const prevEstimated1RM = prevBest ? Number(prevBest.weight_kg) * (1 + Number(prevBest.reps) / 30) : 0;
+
+      if (estimated1RM > prevEstimated1RM) {
+        // New PR!
+        await supabase.from('pr_history').insert({
+          user_id: user.id,
+          exercise_id: exerciseLog.exercise_id,
+          pr_type: reps <= 1 ? '1rm' : reps <= 3 ? '3rm' : reps <= 5 ? '5rm' : 'volume',
+          weight_kg: weight,
+          reps: reps,
+          previous_weight_kg: prevBest ? Number(prevBest.weight_kg) : null,
+          previous_reps: prevBest ? Number(prevBest.reps) : null,
+        });
+
+        setPrCelebration({
+          show: true,
+          exerciseName: exerciseLog.exercise?.name || 'Exercise',
+          oldRecord: prevBest ? `${prevBest.weight_kg}kg × ${prevBest.reps}` : 'None',
+          newRecord: `${weight}kg × ${reps}`,
+        });
+      }
+    } catch (e) {
+      console.error('PR check error:', e);
+    }
   };
 
   const handleDeleteSet = async (setId: string) => {
@@ -362,6 +430,22 @@ export default function Workouts() {
       <WorkoutTemplateSetup 
         open={showTemplateSetup} 
         onOpenChange={setShowTemplateSetup} 
+      />
+
+      {/* Rest Timer */}
+      <RestTimer
+        defaultSeconds={restTimerSeconds}
+        isActive={restTimerActive}
+        onDismiss={() => setRestTimerActive(false)}
+      />
+
+      {/* PR Celebration */}
+      <PRCelebration
+        show={prCelebration.show}
+        exerciseName={prCelebration.exerciseName}
+        oldRecord={prCelebration.oldRecord}
+        newRecord={prCelebration.newRecord}
+        onClose={() => setPrCelebration(prev => ({ ...prev, show: false }))}
       />
     </div>
   );

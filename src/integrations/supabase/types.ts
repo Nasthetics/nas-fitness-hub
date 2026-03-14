@@ -389,6 +389,53 @@ export type Database = {
         }
         Relationships: []
       }
+      pr_history: {
+        Row: {
+          created_at: string
+          exercise_id: string
+          id: string
+          pr_type: string
+          previous_reps: number | null
+          previous_weight_kg: number | null
+          recorded_date: string
+          reps: number
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          exercise_id: string
+          id?: string
+          pr_type?: string
+          previous_reps?: number | null
+          previous_weight_kg?: number | null
+          recorded_date?: string
+          reps?: number
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          exercise_id?: string
+          id?: string
+          pr_type?: string
+          previous_reps?: number | null
+          previous_weight_kg?: number | null
+          recorded_date?: string
+          reps?: number
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pr_history_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercise_library"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           body_fat_percent: number | null
@@ -727,6 +774,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      water_logs: {
+        Row: {
+          amount_ml: number
+          created_at: string
+          id: string
+          log_date: string
+          user_id: string
+        }
+        Insert: {
+          amount_ml?: number
+          created_at?: string
+          id?: string
+          log_date?: string
+          user_id: string
+        }
+        Update: {
+          amount_ml?: number
+          created_at?: string
+          id?: string
+          log_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       workout_logs: {
         Row: {
