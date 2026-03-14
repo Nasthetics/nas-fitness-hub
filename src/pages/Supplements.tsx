@@ -28,6 +28,23 @@ const TIMELINE_SECTIONS = [
   { key: 'anytime', label: '📋 Anytime', icon: '⏰' },
 ];
 
+const DEFAULT_SUPPLEMENTS = [
+  { name: 'Ashwagandha', purpose: 'Stress & cortisol management', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'Opti-Men', purpose: 'Multivitamin', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'Vitamin C 1000mg', purpose: 'Immune support', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'Vitamin D3 4000IU', purpose: 'Bone & immune health', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'Neurobion', purpose: 'B-vitamin complex', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'Probiotic 60B', purpose: 'Gut health', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'Chlorella', purpose: 'Detox & nutrient density', timing: ['AM'] as TimingType[], notes: null },
+  { name: 'EAA', purpose: 'Intra-workout amino acids', timing: ['pre_workout'] as TimingType[], notes: 'During workout' },
+  { name: 'Creatine', purpose: 'Strength & recovery', timing: ['post_workout'] as TimingType[], notes: '5g post-workout' },
+  { name: 'Digestive Enzymes', purpose: 'Digestion support', timing: ['with_meal'] as TimingType[], notes: 'With Meal 3' },
+  { name: 'Omega-3', purpose: 'Anti-inflammatory', timing: ['with_meal'] as TimingType[], notes: 'With largest fat meal' },
+  { name: 'Potassium Citrate', purpose: 'Electrolyte balance', timing: ['PM'] as TimingType[], notes: null },
+  { name: 'Magnesium Glycinate', purpose: 'Sleep & recovery', timing: ['PM'] as TimingType[], notes: 'Pre-sleep' },
+  { name: 'Metformin 500XR', purpose: 'Glucose management', timing: ['with_meal'] as TimingType[], notes: '⚠️ WITH MEALS ONLY - never fasted' },
+];
+
 export default function Supplements() {
   const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -42,6 +59,29 @@ export default function Supplements() {
   const [newPurpose, setNewPurpose] = useState('');
   const [newTiming, setNewTiming] = useState<TimingType[]>([]);
   const [newNotes, setNewNotes] = useState('');
+  const [seeded, setSeeded] = useState(false);
+
+  // Auto-seed default supplements if user has none
+  const seedSupplements = async () => {
+    if (seeded || supplements.length > 0 || supplementsLoading) return;
+    setSeeded(true);
+    for (const supp of DEFAULT_SUPPLEMENTS) {
+      await createSupplement.mutateAsync({
+        name: supp.name,
+        purpose: supp.purpose,
+        timing: supp.timing,
+        notes: supp.notes,
+        is_active: true,
+      });
+    }
+  };
+
+  // Trigger seed when supplements load as empty
+  useMemo(() => {
+    if (!supplementsLoading && supplements.length === 0 && !seeded && user) {
+      seedSupplements();
+    }
+  }, [supplementsLoading, supplements.length, seeded, user]);
 
   // Fetch weekly logs for adherence/streak
   const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
