@@ -14,6 +14,7 @@ import {
   Heart,
   Calendar,
   FileText,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
