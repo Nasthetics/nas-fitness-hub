@@ -54,6 +54,12 @@ export interface Profile {
   rest_day_protein: number;
   rest_day_carbs: number;
   rest_day_fats: number;
+  height_cm: number | null;
+  body_fat_percent: number | null;
+  lean_mass_kg: number | null;
+  target_weight_gain_per_week: number | null;
+  water_target_ml: number | null;
+  ramadan_mode: boolean | null;
   created_at: string;
   updated_at: string;
 }
