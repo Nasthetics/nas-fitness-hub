@@ -356,51 +356,102 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles: {
+      periodization_plans: {
         Row: {
           created_at: string
-          display_name: string | null
+          current_week: number
           id: string
+          name: string
+          phase: string
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_week?: number
+          id?: string
+          name?: string
+          phase?: string
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_week?: number
+          id?: string
+          name?: string
+          phase?: string
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          body_fat_percent: number | null
+          created_at: string
+          display_name: string | null
+          height_cm: number | null
+          id: string
+          lean_mass_kg: number | null
+          ramadan_mode: boolean | null
           rest_day_calories: number | null
           rest_day_carbs: number | null
           rest_day_fats: number | null
           rest_day_protein: number | null
+          target_weight_gain_per_week: number | null
           training_day_calories: number | null
           training_day_carbs: number | null
           training_day_fats: number | null
           training_day_protein: number | null
           updated_at: string
           user_id: string
+          water_target_ml: number | null
         }
         Insert: {
+          body_fat_percent?: number | null
           created_at?: string
           display_name?: string | null
+          height_cm?: number | null
           id?: string
+          lean_mass_kg?: number | null
+          ramadan_mode?: boolean | null
           rest_day_calories?: number | null
           rest_day_carbs?: number | null
           rest_day_fats?: number | null
           rest_day_protein?: number | null
+          target_weight_gain_per_week?: number | null
           training_day_calories?: number | null
           training_day_carbs?: number | null
           training_day_fats?: number | null
           training_day_protein?: number | null
           updated_at?: string
           user_id: string
+          water_target_ml?: number | null
         }
         Update: {
+          body_fat_percent?: number | null
           created_at?: string
           display_name?: string | null
+          height_cm?: number | null
           id?: string
+          lean_mass_kg?: number | null
+          ramadan_mode?: boolean | null
           rest_day_calories?: number | null
           rest_day_carbs?: number | null
           rest_day_fats?: number | null
           rest_day_protein?: number | null
+          target_weight_gain_per_week?: number | null
           training_day_calories?: number | null
           training_day_carbs?: number | null
           training_day_fats?: number | null
           training_day_protein?: number | null
           updated_at?: string
           user_id?: string
+          water_target_ml?: number | null
         }
         Relationships: []
       }
@@ -431,6 +482,45 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_checkins: {
+        Row: {
+          breathwork_done: boolean | null
+          checkin_date: string
+          created_at: string
+          energy: number | null
+          id: string
+          recovery_score: number | null
+          sleep_hours: number | null
+          sleep_quality: number | null
+          stress: number | null
+          user_id: string
+        }
+        Insert: {
+          breathwork_done?: boolean | null
+          checkin_date?: string
+          created_at?: string
+          energy?: number | null
+          id?: string
+          recovery_score?: number | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          stress?: number | null
+          user_id: string
+        }
+        Update: {
+          breathwork_done?: boolean | null
+          checkin_date?: string
+          created_at?: string
+          energy?: number | null
+          id?: string
+          recovery_score?: number | null
+          sleep_hours?: number | null
+          sleep_quality?: number | null
+          stress?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       set_logs: {
         Row: {
           created_at: string
@@ -440,6 +530,7 @@ export type Database = {
           notes: string | null
           reps: number | null
           rest_seconds: number | null
+          rir: number | null
           rpe: number | null
           set_number: number
           weight_kg: number | null
@@ -452,6 +543,7 @@ export type Database = {
           notes?: string | null
           reps?: number | null
           rest_seconds?: number | null
+          rir?: number | null
           rpe?: number | null
           set_number: number
           weight_kg?: number | null
@@ -464,6 +556,7 @@ export type Database = {
           notes?: string | null
           reps?: number | null
           rest_seconds?: number | null
+          rir?: number | null
           rpe?: number | null
           set_number?: number
           weight_kg?: number | null
