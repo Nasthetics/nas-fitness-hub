@@ -431,6 +431,22 @@ export default function Workouts() {
         open={showTemplateSetup} 
         onOpenChange={setShowTemplateSetup} 
       />
+
+      {/* Rest Timer */}
+      <RestTimer
+        defaultSeconds={restTimerSeconds}
+        isActive={restTimerActive}
+        onDismiss={() => setRestTimerActive(false)}
+      />
+
+      {/* PR Celebration */}
+      <PRCelebration
+        show={prCelebration.show}
+        exerciseName={prCelebration.exerciseName}
+        oldRecord={prCelebration.oldRecord}
+        newRecord={prCelebration.newRecord}
+        onClose={() => setPrCelebration(prev => ({ ...prev, show: false }))}
+      />
     </div>
   );
 }
