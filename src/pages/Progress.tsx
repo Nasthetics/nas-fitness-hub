@@ -14,7 +14,63 @@ import { useBodyMetrics, useCreateBodyMetric } from '@/hooks/use-fitness-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+function PRFeed() {
+  const { user } = useAuth();
+  const { data: prs = [] } = useQuery({
+    queryKey: ['pr-history', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('pr_history')
+        .select('*, exercise:exercise_library(name)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) return [];
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  if (prs.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-yellow-500" />
+          PR History
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {prs.map((pr: any) => (
+            <div key={pr.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-primary/5 border border-primary/10">
+              <div>
+                <span className="font-medium">{pr.exercise?.name || 'Exercise'}</span>
+                <Badge variant="outline" className="ml-2 text-xs">{pr.pr_type.toUpperCase()}</Badge>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                {pr.previous_weight_kg && (
+                  <span className="text-muted-foreground line-through">
+                    {pr.previous_weight_kg}kg × {pr.previous_reps}
+                  </span>
+                )}
+                <span className="font-bold text-primary">{pr.weight_kg}kg × {pr.reps}</span>
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(pr.recorded_date), 'MMM d')}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Progress() {
   const { user } = useAuth();
