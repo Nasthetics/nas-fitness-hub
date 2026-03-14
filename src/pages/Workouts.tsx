@@ -39,9 +39,14 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function Workouts() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
-  
+  const [restTimerActive, setRestTimerActive] = useState(false);
+  const [restTimerSeconds, setRestTimerSeconds] = useState(90);
+  const [prCelebration, setPrCelebration] = useState<{ show: boolean; exerciseName: string; oldRecord: string; newRecord: string }>({
+    show: false, exerciseName: '', oldRecord: '', newRecord: ''
+  });
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   
