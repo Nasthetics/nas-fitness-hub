@@ -96,6 +96,7 @@ async function migrateStaleProfile(profile: Profile, userId: string) {
   const needsFix =
     profile.training_day_calories === 2800 ||
     profile.training_day_protein === 200 ||
+    profile.weekly_workout_target === 6 ||
     profile.display_name === 'Anas' ||
     !profile.display_name;
 
@@ -106,6 +107,7 @@ async function migrateStaleProfile(profile: Profile, userId: string) {
   if (profile.training_day_protein === 200) updates.training_day_protein = 245;
   if (profile.training_day_carbs === 300) updates.training_day_carbs = 189;
   if (profile.training_day_fats === 80) updates.training_day_fats = 91;
+  if (profile.weekly_workout_target === 6) updates.weekly_workout_target = 5;
   if (profile.display_name === 'Anas' || !profile.display_name) updates.display_name = 'Nas';
 
   if (Object.keys(updates).length > 0) {

@@ -154,14 +154,14 @@ export default function Dashboard() {
   }, [activeSupps, supplementLogs]);
 
   // Progress ring helper with edit
-  const Ring = ({ value, max, size = 80, color, label, onEdit }: { value: number; max: number; size?: number; color: string; label: string; onEdit?: () => void }) => {
+  const Ring = ({ value, max, size = 80, color, label, subtext, onEdit }: { value: number; max: number; size?: number; color: string; label: string; subtext?: string; onEdit?: () => void }) => {
     const sw = 6;
     const r = (size - sw) / 2;
     const c = r * 2 * Math.PI;
     const pct = Math.min(value / max, 1);
     const off = c - pct * c;
     return (
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-0.5">
         <div className="relative" style={{ width: size, height: size }}>
           <svg width={size} height={size} className="-rotate-90">
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={sw} />
@@ -174,6 +174,9 @@ export default function Dashboard() {
         <span className="text-xs text-muted-foreground">{label}</span>
         {!isTrainingDay && label === 'Calories' && (
           <Badge variant="outline" className="text-[8px] px-1 py-0">Rest Day</Badge>
+        )}
+        {subtext && (
+          <span className="text-[10px] text-muted-foreground">{subtext}</span>
         )}
         {onEdit && (
           <button onClick={onEdit} className="text-muted-foreground hover:text-primary transition-colors">
@@ -199,11 +202,11 @@ export default function Dashboard() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-around flex-wrap gap-4">
-            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" onEdit={() => setEditTarget({ label: 'Calories', unit: 'kcal', value: targetCalories, field: isTrainingDay ? 'training_day_calories' : 'rest_day_calories', step: 50 })} />
-            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" onEdit={() => setEditTarget({ label: 'Protein', unit: 'grams', value: targetProtein, field: isTrainingDay ? 'training_day_protein' : 'rest_day_protein', step: 5 })} />
-            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" onEdit={() => setEditTarget({ label: 'Water', unit: 'ml', value: waterTarget, field: 'water_target_ml', step: 250 })} />
-            <Ring value={takenCount} max={activeSupps.length || 1} color="#a855f7" label="Supps" />
-            <Ring value={workoutDone ? 1 : 0} max={1} color="#22c55e" label="Workout" />
+            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" subtext={`${Math.round(nutritionStats.calories)} / ${targetCalories} kcal`} onEdit={() => setEditTarget({ label: 'Calories', unit: 'kcal', value: targetCalories, field: isTrainingDay ? 'training_day_calories' : 'rest_day_calories', step: 50 })} />
+            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" subtext={`${Math.round(nutritionStats.protein)} / ${targetProtein} g`} onEdit={() => setEditTarget({ label: 'Protein', unit: 'grams', value: targetProtein, field: isTrainingDay ? 'training_day_protein' : 'rest_day_protein', step: 5 })} />
+            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" subtext={`${(waterMl / 1000).toFixed(1)} / ${waterTarget / 1000} L`} onEdit={() => setEditTarget({ label: 'Water', unit: 'ml', value: waterTarget, field: 'water_target_ml', step: 250 })} />
+            <Ring value={takenCount} max={activeSupps.length || 1} color="#a855f7" label="Supps" subtext={`${takenCount} / ${activeSupps.length}`} />
+            <Ring value={workoutDone ? 1 : 0} max={1} color="#22c55e" label="Workout" subtext={`${(weeklyWorkouts?.filter(w => w.completed).length || 0)} / ${weeklyWorkoutTarget} days`} />
           </div>
         </CardContent>
       </Card>
