@@ -25,10 +25,14 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-[#141414]/95 bg-[#141414]"
+        style={{
+          borderTop: '1px solid #2A2A2A',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        }}
       >
-        <div className="flex items-center justify-around h-[60px]">
+        <div className="flex items-center justify-around" style={{ height: 64 }}>
           {tabs.map((tab) => {
             const isActive = tab.path !== '__more__' && location.pathname === tab.path;
             const Icon = tab.icon;
@@ -42,10 +46,8 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
                     navigate(tab.path);
                   }
                 }}
-                className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px] transition-colors',
-                  isActive ? 'text-info' : 'text-muted-foreground'
-                )}
+                className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px] transition-colors"
+                style={{ color: isActive ? '#00B4FF' : '#666666' }}
               >
                 <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[10px] font-medium">{tab.label}</span>
