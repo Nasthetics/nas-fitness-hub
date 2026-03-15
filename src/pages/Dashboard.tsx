@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, Pill, Scale, Flame, Zap, Droplets,
-  Heart, Apple, ChevronRight, Clock
+  Heart, Apple, ChevronRight, Clock, Pencil
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { DeloadBanner } from '@/components/workouts/DeloadBanner';
+import { TargetEditModal } from '@/components/dashboard/TargetEditModal';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -105,6 +106,10 @@ export default function Dashboard() {
   const targetCalories = isTrainingDay ? (profile?.training_day_calories || 2556) : (profile?.rest_day_calories || 2556);
   const targetProtein = isTrainingDay ? (profile?.training_day_protein || 245) : (profile?.rest_day_protein || 245);
   const waterTarget = profile?.water_target_ml || 4000;
+  const weeklyWorkoutTarget = profile?.weekly_workout_target || 5;
+
+  // Target edit modals
+  const [editTarget, setEditTarget] = useState<{ label: string; unit: string; value: number; field: string; step?: number; min?: number; max?: number } | null>(null);
 
   const nutritionStats = useMemo(() => {
     if (!todayMeals) return { calories: 0, protein: 0, carbs: 0, fats: 0 };
@@ -148,8 +153,8 @@ export default function Dashboard() {
     return untaken[0] || null;
   }, [activeSupps, supplementLogs]);
 
-  // Progress ring helper
-  const Ring = ({ value, max, size = 80, color, label }: { value: number; max: number; size?: number; color: string; label: string }) => {
+  // Progress ring helper with edit
+  const Ring = ({ value, max, size = 80, color, label, onEdit }: { value: number; max: number; size?: number; color: string; label: string; onEdit?: () => void }) => {
     const sw = 6;
     const r = (size - sw) / 2;
     const c = r * 2 * Math.PI;
@@ -167,6 +172,14 @@ export default function Dashboard() {
           </div>
         </div>
         <span className="text-xs text-muted-foreground">{label}</span>
+        {!isTrainingDay && label === 'Calories' && (
+          <Badge variant="outline" className="text-[8px] px-1 py-0">Rest Day</Badge>
+        )}
+        {onEdit && (
+          <button onClick={onEdit} className="text-muted-foreground hover:text-primary transition-colors">
+            <Pencil className="h-3 w-3" />
+          </button>
+        )}
       </div>
     );
   };
@@ -186,14 +199,27 @@ export default function Dashboard() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-around flex-wrap gap-4">
-            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" />
-            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" />
-            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" />
+            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" onEdit={() => setEditTarget({ label: 'Calories', unit: 'kcal', value: targetCalories, field: isTrainingDay ? 'training_day_calories' : 'rest_day_calories', step: 50 })} />
+            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" onEdit={() => setEditTarget({ label: 'Protein', unit: 'grams', value: targetProtein, field: isTrainingDay ? 'training_day_protein' : 'rest_day_protein', step: 5 })} />
+            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" onEdit={() => setEditTarget({ label: 'Water', unit: 'ml', value: waterTarget, field: 'water_target_ml', step: 250 })} />
             <Ring value={takenCount} max={activeSupps.length || 1} color="#a855f7" label="Supps" />
             <Ring value={workoutDone ? 1 : 0} max={1} color="#22c55e" label="Workout" />
           </div>
         </CardContent>
       </Card>
+
+      {/* Target Edit Modal */}
+      {editTarget && (
+        <TargetEditModal
+          open={!!editTarget}
+          onOpenChange={(open) => !open && setEditTarget(null)}
+          label={editTarget.label}
+          unit={editTarget.unit}
+          currentValue={editTarget.value}
+          fieldName={editTarget.field}
+          step={editTarget.step}
+        />
+      )}
 
       {/* Recovery Score + Today's Workout */}
       <div className="grid md:grid-cols-2 gap-4">
@@ -393,10 +419,10 @@ export default function Dashboard() {
               <span className="text-xs font-medium">Weekly</span>
             </div>
             <div className="text-xl font-bold">
-              {weeklyWorkouts?.filter(w => w.completed).length || 0}/5
+              {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
             </div>
             <Progress 
-              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 5) * 100} 
+              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / weeklyWorkoutTarget) * 100} 
               className="h-1.5 mt-2" 
             />
             <span className="text-[10px] text-muted-foreground">workouts</span>
@@ -436,10 +462,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {weeklyWorkouts?.filter(w => w.completed).length || 0}/5
+              {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
             </div>
             <Progress 
-              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 5) * 100} 
+              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / weeklyWorkoutTarget) * 100} 
               className="h-2 mt-2" 
             />
             <p className="text-sm text-muted-foreground mt-1">workouts this week</p>

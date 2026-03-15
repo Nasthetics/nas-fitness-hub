@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Droplets, User, Bot, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Droplets, User, Bot, CheckCircle2, AlertCircle, Target, Dumbbell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -41,14 +41,24 @@ export default function Settings() {
   const [bodyFat, setBodyFat] = useState('');
   const [leanMass, setLeanMass] = useState('');
   const [targetGain, setTargetGain] = useState('');
-  const [waterTarget, setWaterTarget] = useState('');
-  const [trainingCal, setTrainingCal] = useState('');
-  const [trainingP, setTrainingP] = useState('');
-  const [trainingC, setTrainingC] = useState('');
-  const [trainingF, setTrainingF] = useState('');
   const [currentWeight, setCurrentWeight] = useState('');
   const [ramadanMode, setRamadanMode] = useState(false);
   const [claudeApiKey, setClaudeApiKey] = useState(() => localStorage.getItem('claude_api_key') || '');
+
+  // Daily Targets
+  const [trainingCal, setTrainingCal] = useState('2556');
+  const [trainingP, setTrainingP] = useState('245');
+  const [trainingC, setTrainingC] = useState('189');
+  const [trainingF, setTrainingF] = useState('91');
+  const [waterTarget, setWaterTarget] = useState('4000');
+  const [weeklyWorkoutTarget, setWeeklyWorkoutTarget] = useState('5');
+
+  // Rest day targets
+  const [restDayDifferent, setRestDayDifferent] = useState(true);
+  const [restCal, setRestCal] = useState('2256');
+  const [restP, setRestP] = useState('245');
+  const [restC, setRestC] = useState('159');
+  const [restF, setRestF] = useState('91');
 
   useEffect(() => {
     if (profile) {
@@ -63,11 +73,20 @@ export default function Settings() {
       setTrainingP(profile.training_day_protein?.toString() || '245');
       setTrainingC(profile.training_day_carbs?.toString() || '189');
       setTrainingF(profile.training_day_fats?.toString() || '91');
+      setWeeklyWorkoutTarget((profile.weekly_workout_target ?? 5).toString());
+      setRestDayDifferent(profile.rest_day_different_targets ?? true);
+      setRestCal(profile.rest_day_calories?.toString() || '2256');
+      setRestP(profile.rest_day_protein?.toString() || '245');
+      setRestC(profile.rest_day_carbs?.toString() || '159');
+      setRestF(profile.rest_day_fats?.toString() || '91');
       setRamadanMode(profile.ramadan_mode || false);
     }
   }, [profile]);
 
   const handleSave = async () => {
+    const restCalVal = restDayDifferent ? parseInt(restCal) : (parseInt(trainingCal) - 300);
+    const restCVal = restDayDifferent ? parseInt(restC) : (parseInt(trainingC) - 30);
+    
     await updateProfile.mutateAsync({
       display_name: displayName || null,
       height_cm: heightCm ? parseFloat(heightCm) : null,
@@ -79,9 +98,26 @@ export default function Settings() {
       training_day_protein: trainingP ? parseInt(trainingP) : 245,
       training_day_carbs: trainingC ? parseInt(trainingC) : 189,
       training_day_fats: trainingF ? parseInt(trainingF) : 91,
+      rest_day_calories: restCalVal || 2256,
+      rest_day_protein: restDayDifferent ? parseInt(restP) : parseInt(trainingP),
+      rest_day_carbs: restCVal || 159,
+      rest_day_fats: restDayDifferent ? parseInt(restF) : parseInt(trainingF),
+      weekly_workout_target: parseInt(weeklyWorkoutTarget) || 5,
+      rest_day_different_targets: restDayDifferent,
       ramadan_mode: ramadanMode,
     } as any);
-    toast({ title: 'Settings saved! ✅' });
+    
+    // Also save to localStorage as fallback
+    localStorage.setItem('targets_backup', JSON.stringify({
+      training_day_calories: parseInt(trainingCal),
+      training_day_protein: parseInt(trainingP),
+      training_day_carbs: parseInt(trainingC),
+      training_day_fats: parseInt(trainingF),
+      water_target_ml: parseInt(waterTarget),
+      weekly_workout_target: parseInt(weeklyWorkoutTarget),
+    }));
+    
+    toast({ title: 'Targets updated ✅' });
   };
 
   return (
@@ -127,35 +163,81 @@ export default function Settings() {
               <Input type="number" step="0.1" value={targetGain} onChange={e => setTargetGain(e.target.value)} placeholder="0.3" />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2"><Droplets className="h-4 w-4" /> Daily Water Target (ml)</Label>
-            <Input type="number" value={waterTarget} onChange={e => setWaterTarget(e.target.value)} placeholder="4000" />
-          </div>
         </CardContent>
       </Card>
 
-      {/* Macros */}
+      {/* Daily Targets */}
       <Card>
         <CardHeader>
-          <CardTitle>Training Day Macros</CardTitle>
+          <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5" /> Daily Targets</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-4 gap-4">
+        <CardContent className="space-y-4">
+          {/* Training Day Targets */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Dumbbell className="h-4 w-4" /> 
+              {restDayDifferent ? 'Training Day' : 'Daily Targets'}
+            </h3>
+            <div className="grid grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Calories</Label>
+                <Input type="number" value={trainingCal} onChange={e => setTrainingCal(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Protein (g)</Label>
+                <Input type="number" value={trainingP} onChange={e => setTrainingP(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Carbs (g)</Label>
+                <Input type="number" value={trainingC} onChange={e => setTrainingC(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Fats (g)</Label>
+                <Input type="number" value={trainingF} onChange={e => setTrainingF(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Rest Day Toggle */}
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <Label className="text-sm">Different targets for rest days</Label>
+            <Switch checked={restDayDifferent} onCheckedChange={setRestDayDifferent} />
+          </div>
+
+          {/* Rest Day Targets */}
+          {restDayDifferent && (
+            <div>
+              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">😴 Rest Day</h3>
+              <div className="grid grid-cols-4 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Calories</Label>
+                  <Input type="number" value={restCal} onChange={e => setRestCal(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Protein (g)</Label>
+                  <Input type="number" value={restP} onChange={e => setRestP(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Carbs (g)</Label>
+                  <Input type="number" value={restC} onChange={e => setRestC(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Fats (g)</Label>
+                  <Input type="number" value={restF} onChange={e => setRestF(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Water & Workout Days */}
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
             <div className="space-y-2">
-              <Label>Calories</Label>
-              <Input type="number" value={trainingCal} onChange={e => setTrainingCal(e.target.value)} />
+              <Label className="flex items-center gap-2"><Droplets className="h-4 w-4" /> Water Target (ml)</Label>
+              <Input type="number" step="250" value={waterTarget} onChange={e => setWaterTarget(e.target.value)} placeholder="4000" />
             </div>
             <div className="space-y-2">
-              <Label>Protein (g)</Label>
-              <Input type="number" value={trainingP} onChange={e => setTrainingP(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Carbs (g)</Label>
-              <Input type="number" value={trainingC} onChange={e => setTrainingC(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Fats (g)</Label>
-              <Input type="number" value={trainingF} onChange={e => setTrainingF(e.target.value)} />
+              <Label className="flex items-center gap-2"><Dumbbell className="h-4 w-4" /> Weekly Workout Days</Label>
+              <Input type="number" min="1" max="7" value={weeklyWorkoutTarget} onChange={e => setWeeklyWorkoutTarget(e.target.value)} />
             </div>
           </div>
         </CardContent>
@@ -173,7 +255,6 @@ export default function Settings() {
         </CardHeader>
         {ramadanMode && (
           <CardContent className="space-y-6">
-            {/* Prayer Times */}
             <div>
               <h3 className="font-medium mb-3">Dubai Prayer Times</h3>
               <div className="grid grid-cols-3 gap-2">
@@ -185,13 +266,11 @@ export default function Settings() {
                 ))}
               </div>
             </div>
-
-            {/* Supplement Shifts */}
             <div>
               <h3 className="font-medium mb-3">Supplement Timing Shifts</h3>
               <div className="space-y-2">
                 {RAMADAN_SUPPLEMENT_SHIFTS.map(s => (
-                  <div key={s.supplement} className={`flex items-center justify-between p-3 rounded-lg ${s.warning ? 'bg-red-500/10 border border-red-500/30' : 'bg-muted/50'}`}>
+                  <div key={s.supplement} className={`flex items-center justify-between p-3 rounded-lg ${s.warning ? 'bg-destructive/10 border border-destructive/30' : 'bg-muted/50'}`}>
                     <span className="text-sm font-medium">{s.supplement}</span>
                     <div className="flex items-center gap-2">
                       {s.warning && <Badge variant="destructive" className="text-xs">⚠️ WITH MEALS ONLY</Badge>}
@@ -201,8 +280,6 @@ export default function Settings() {
                 ))}
               </div>
             </div>
-
-            {/* Workout Options */}
             <div>
               <h3 className="font-medium mb-3">Workout Timing Options</h3>
               <div className="space-y-2">
@@ -214,16 +291,13 @@ export default function Settings() {
                 ))}
               </div>
             </div>
-
-            {/* Hydration */}
-            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/30">
+            <div className="p-4 rounded-lg bg-info/10 border border-info/30">
               <div className="flex items-center gap-2 mb-2">
-                <Droplets className="h-4 w-4 text-blue-400" />
-                <span className="font-medium text-blue-400">Compressed Hydration</span>
+                <Droplets className="h-4 w-4 text-info" />
+                <span className="font-medium text-info">Compressed Hydration</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 4L between Iftar (18:15) and Suhoor (~04:30). That's ~400ml every hour.
-                Set reminders every 60 minutes during this window.
               </p>
             </div>
           </CardContent>

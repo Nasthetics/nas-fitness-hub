@@ -22,6 +22,7 @@ export interface Exercise {
   substitutions: string[] | null;
   coaching_cues: string | null;
   image_url: string | null;
+  muscle_subgroup: string | null;
   created_at: string;
   // Joined fields
   primary_muscle_name?: string;
@@ -60,6 +61,8 @@ export interface Profile {
   target_weight_gain_per_week: number | null;
   water_target_ml: number | null;
   ramadan_mode: boolean | null;
+  weekly_workout_target: number | null;
+  rest_day_different_targets: boolean | null;
   created_at: string;
   updated_at: string;
 }

@@ -138,6 +138,7 @@ export type Database = {
           equipment: Database["public"]["Enums"]["equipment_type"]
           id: string
           image_url: string | null
+          muscle_subgroup: string | null
           name: string
           primary_muscle: string | null
           secondary_muscle: string | null
@@ -149,6 +150,7 @@ export type Database = {
           equipment: Database["public"]["Enums"]["equipment_type"]
           id?: string
           image_url?: string | null
+          muscle_subgroup?: string | null
           name: string
           primary_muscle?: string | null
           secondary_muscle?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           equipment?: Database["public"]["Enums"]["equipment_type"]
           id?: string
           image_url?: string | null
+          muscle_subgroup?: string | null
           name?: string
           primary_muscle?: string | null
           secondary_muscle?: string | null
@@ -489,6 +492,7 @@ export type Database = {
           ramadan_mode: boolean | null
           rest_day_calories: number | null
           rest_day_carbs: number | null
+          rest_day_different_targets: boolean | null
           rest_day_fats: number | null
           rest_day_protein: number | null
           target_weight_gain_per_week: number | null
@@ -499,6 +503,7 @@ export type Database = {
           updated_at: string
           user_id: string
           water_target_ml: number | null
+          weekly_workout_target: number | null
         }
         Insert: {
           body_fat_percent?: number | null
@@ -510,6 +515,7 @@ export type Database = {
           ramadan_mode?: boolean | null
           rest_day_calories?: number | null
           rest_day_carbs?: number | null
+          rest_day_different_targets?: boolean | null
           rest_day_fats?: number | null
           rest_day_protein?: number | null
           target_weight_gain_per_week?: number | null
@@ -520,6 +526,7 @@ export type Database = {
           updated_at?: string
           user_id: string
           water_target_ml?: number | null
+          weekly_workout_target?: number | null
         }
         Update: {
           body_fat_percent?: number | null
@@ -531,6 +538,7 @@ export type Database = {
           ramadan_mode?: boolean | null
           rest_day_calories?: number | null
           rest_day_carbs?: number | null
+          rest_day_different_targets?: boolean | null
           rest_day_fats?: number | null
           rest_day_protein?: number | null
           target_weight_gain_per_week?: number | null
@@ -541,6 +549,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           water_target_ml?: number | null
+          weekly_workout_target?: number | null
         }
         Relationships: []
       }

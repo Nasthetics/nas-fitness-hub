@@ -24,6 +24,15 @@ interface ExercisePickerProps {
 const MUSCLE_FILTERS = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 const EQUIPMENT_OPTIONS: EquipmentType[] = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'kettlebell', 'resistance_band', 'other'];
 
+const SUBGROUP_MAP: Record<string, string[]> = {
+  Chest: ['Upper Chest', 'Mid Chest', 'Lower Chest'],
+  Back: ['Upper Back/Traps', 'Lats', 'Mid Back/Rhomboids', 'Lower Back'],
+  Shoulders: ['Front Delt', 'Side Delt', 'Rear Delt'],
+  Legs: ['Quads', 'Hamstrings', 'Glutes', 'Calves'],
+  Arms: ['Biceps', 'Triceps', 'Forearms'],
+  Core: ['Upper Abs', 'Lower Abs', 'Obliques'],
+};
+
 export function ExercisePicker({ 
   open, onOpenChange, onSelect, 
   recentExerciseIds = [], 
@@ -34,6 +43,7 @@ export function ExercisePicker({
   const { data: exercises = [] } = useExerciseLibrary();
   const [search, setSearch] = useState('');
   const [muscleFilter, setMuscleFilter] = useState('All');
+  const [subgroupFilter, setSubgroupFilter] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newMuscle, setNewMuscle] = useState('Chest');
   const [newEquipment, setNewEquipment] = useState<EquipmentType>('barbell');
@@ -63,8 +73,11 @@ export function ExercisePicker({
         e.secondary_muscle_name?.toLowerCase().includes(f)
       );
     }
+    if (subgroupFilter) {
+      result = result.filter(e => e.muscle_subgroup === subgroupFilter);
+    }
     return result;
-  }, [exercises, search, muscleFilter, fuse]);
+  }, [exercises, search, muscleFilter, subgroupFilter, fuse]);
 
   const recentExercises = useMemo(() => 
     recentExerciseIds
@@ -105,6 +118,9 @@ export function ExercisePicker({
           <div className="flex items-center gap-2 mt-0.5">
             {exercise.primary_muscle_name && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{exercise.primary_muscle_name}</Badge>
+            )}
+            {exercise.muscle_subgroup && (
+              <Badge variant="secondary" className="text-[9px] px-1 py-0 opacity-75">{exercise.muscle_subgroup}</Badge>
             )}
             <span className="text-[10px] text-muted-foreground">{exercise.equipment}</span>
           </div>
@@ -174,7 +190,7 @@ export function ExercisePicker({
               {MUSCLE_FILTERS.map(m => (
                 <button
                   key={m}
-                  onClick={() => setMuscleFilter(m)}
+                  onClick={() => { setMuscleFilter(m); setSubgroupFilter(null); }}
                   className={cn(
                     'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                     muscleFilter === m 
@@ -186,6 +202,33 @@ export function ExercisePicker({
                 </button>
               ))}
             </div>
+
+            {/* Subgroup filter chips */}
+            {muscleFilter !== 'All' && SUBGROUP_MAP[muscleFilter] && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  onClick={() => setSubgroupFilter(null)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors',
+                    !subgroupFilter ? 'bg-primary text-primary-foreground' : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  All
+                </button>
+                {SUBGROUP_MAP[muscleFilter].map(sg => (
+                  <button
+                    key={sg}
+                    onClick={() => setSubgroupFilter(sg)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors',
+                      subgroupFilter === sg ? 'bg-primary text-primary-foreground' : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {sg}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="space-y-2">
               {filteredExercises.map(renderExerciseCard)}
