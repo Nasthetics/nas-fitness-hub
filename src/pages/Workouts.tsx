@@ -15,6 +15,8 @@ import { WorkoutStatsBar } from '@/components/workouts/WorkoutStatsBar';
 import { ExercisePicker } from '@/components/workouts/ExercisePicker';
 import { ExerciseJumpNav } from '@/components/workouts/ExerciseJumpNav';
 import { POSuggestionsBanner } from '@/components/workouts/POSuggestionsBanner';
+import { WorkoutSummary } from '@/components/workouts/WorkoutSummary';
+import { DeloadBanner } from '@/components/workouts/DeloadBanner';
 import { getSmartRestSeconds } from '@/lib/smart-rest';
 import { 
   useWorkoutTemplates, useWorkoutLogs, useTodayWorkout, useCreateWorkoutLog,
