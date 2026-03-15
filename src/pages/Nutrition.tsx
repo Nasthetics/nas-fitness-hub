@@ -37,7 +37,9 @@ export default function Nutrition() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState('100');
   const [isAddMealDialogOpen, setIsAddMealDialogOpen] = useState(false);
-  const [scannedProduct, setScannedProduct] = useState<{name: string; calories: number; protein: number; carbs: number; fats: number} | null>(null);
+  const [scannedProduct, setScannedProduct] = useState<{name: string; calories: number; protein: number; carbs: number; fats: number; barcode?: string} | null>(null);
+  const [scannedQty, setScannedQty] = useState('100');
+  const [scannedMealId, setScannedMealId] = useState<string | null>(null);
 
   // Determine if today is a training day based on workout
   const isActualTrainingDay = !!todayWorkout;
