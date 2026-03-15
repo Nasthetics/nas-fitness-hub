@@ -119,6 +119,26 @@ export default function Nutrition() {
     setFoodSearchQuery('');
   };
 
+  const handleAddScannedFood = async () => {
+    if (!scannedMealId || !scannedProduct) return;
+    const qty = parseFloat(scannedQty);
+    const multiplier = qty / 100;
+    await createMealItem.mutateAsync({
+      meal_log_id: scannedMealId,
+      food_id: null,
+      custom_food_name: scannedProduct.name,
+      quantity_g: qty,
+      calories: Math.round(scannedProduct.calories * multiplier),
+      protein: Math.round(scannedProduct.protein * multiplier * 10) / 10,
+      carbs: Math.round(scannedProduct.carbs * multiplier * 10) / 10,
+      fats: Math.round(scannedProduct.fats * multiplier * 10) / 10,
+      fiber: 0,
+    });
+    setScannedProduct(null);
+    setScannedQty('100');
+    setScannedMealId(null);
+  };
+
   const navigateDate = (days: number) => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() + days);
