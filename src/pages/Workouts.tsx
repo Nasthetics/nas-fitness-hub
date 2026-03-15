@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { WorkoutMusclePreview } from '@/components/workouts/WorkoutMusclePreview';
 import { EnhancedExerciseCard } from '@/components/workouts/EnhancedExerciseCard';
 import { WorkoutTemplateSetup } from '@/components/workouts/WorkoutTemplateSetup';
+import { TemplateLibrary, SaveAsTemplateDialog } from '@/components/workouts/TemplateLibrary';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkoutMode } from '@/components/layout/AppLayout';
