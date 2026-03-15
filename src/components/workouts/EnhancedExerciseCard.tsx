@@ -114,9 +114,9 @@ export function EnhancedExerciseCard({
                 <span className="text-[10px] text-muted-foreground font-normal">{exercise.muscle_subgroup}</span>
               )}
               {sets.length > 0 && (
-                <span className="text-xs text-muted-foreground ml-1">· Set {sets.length}{totalExercises ? `/${templateExercise?.default_sets || '?'}` : ''}</span>
+                <span className="text-xs text-muted-foreground">· Set {sets.length}{totalExercises ? `/${templateExercise?.default_sets || '?'}` : ''}</span>
               )}
-            </span>
+            </div>
             {hasPR && <Trophy className="h-4 w-4 text-warning" />}
           </CardTitle>
           
