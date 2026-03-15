@@ -16,6 +16,7 @@ import { FoodCategoryTabs } from '@/components/nutrition/FoodCategoryTabs';
 import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState';
 import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
 import { WaterTracker } from '@/components/nutrition/WaterTracker';
+import { BarcodeScanner } from '@/components/nutrition/BarcodeScanner';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
@@ -36,6 +37,7 @@ export default function Nutrition() {
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [quantity, setQuantity] = useState('100');
   const [isAddMealDialogOpen, setIsAddMealDialogOpen] = useState(false);
+  const [scannedProduct, setScannedProduct] = useState<{name: string; calories: number; protein: number; carbs: number; fats: number} | null>(null);
 
   // Determine if today is a training day based on workout
   const isActualTrainingDay = !!todayWorkout;
@@ -142,6 +144,9 @@ export default function Nutrition() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <BarcodeScanner onProductScanned={(product) => {
+            setScannedProduct(product);
+          }} />
           <Button variant="outline" size="icon" onClick={() => navigateDate(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
