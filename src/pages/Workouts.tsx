@@ -478,7 +478,7 @@ export default function Workouts() {
     const brightModeClass = brightMode ? 'bg-white text-black' : 'bg-background';
 
     return (
-      <div className={cn('flex flex-col min-h-screen', brightModeClass)}>
+      <div className={cn('flex flex-col min-h-screen w-full max-w-[100vw] overflow-x-hidden', brightModeClass)}>
         {/* Paused overlay */}
         {isPaused && !showInactivityDialog && (
           <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur flex flex-col items-center justify-center gap-6">
@@ -508,8 +508,8 @@ export default function Workouts() {
         </AlertDialog>
 
         {/* Top bar */}
-        <div className={cn('sticky top-0 z-30 border-b border-border px-4 py-3', brightMode ? 'bg-white' : 'bg-background')}>
-          <div className="flex items-center justify-between">
+        <div className={cn('sticky top-0 z-30 border-b border-border px-3 py-3 w-full', brightMode ? 'bg-white' : 'bg-background')}>
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExitWorkout}>
                 <X className="h-5 w-5" />
@@ -613,7 +613,7 @@ export default function Workouts() {
 
           <Button 
             variant="outline" 
-            className="w-full h-14 rounded-xl border-dashed"
+            className="w-full h-14 rounded-xl border-dashed mx-auto max-w-full"
             onClick={() => setShowExercisePicker(true)}
           >
             <Plus className="h-5 w-5 mr-2" /> Add Exercise
@@ -622,7 +622,8 @@ export default function Workouts() {
           {clampedIndex >= exerciseLogs.length - 1 && (
             <Button 
               onClick={handleCompleteWorkout}
-              className="w-full h-14 text-lg font-bold rounded-xl bg-success hover:bg-success/90 text-success-foreground"
+              className="w-full h-14 text-lg font-bold rounded-xl bg-success hover:bg-success/90 text-success-foreground mx-4 sm:mx-0"
+              style={{ width: 'calc(100% - 0px)' }}
             >
               <Check className="h-5 w-5 mr-2" /> Finish Workout
             </Button>
