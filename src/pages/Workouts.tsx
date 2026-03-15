@@ -8,6 +8,8 @@ import {
   Dumbbell, Plus, ChevronLeft, ChevronRight, Check, PlayCircle, Settings,
   X, Pause, Play, AlertTriangle
 } from 'lucide-react';
+import { useWakeLock } from '@/hooks/use-wake-lock';
+import { useSwipe } from '@/hooks/use-swipe';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
 import { RestTimer } from '@/components/workouts/RestTimer';
 import { PRCelebration } from '@/components/workouts/PRCelebration';
