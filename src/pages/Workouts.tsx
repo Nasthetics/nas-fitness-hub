@@ -33,6 +33,7 @@ import { TemplateLibrary, SaveAsTemplateDialog } from '@/components/workouts/Tem
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkoutMode } from '@/components/layout/AppLayout';
+import { useTheme } from '@/hooks/use-theme';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -42,6 +43,8 @@ export default function Workouts() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { isWorkoutMode, setIsWorkoutMode } = useWorkoutMode();
+  const { theme, setTheme } = useTheme();
+  const [preWorkoutTheme, setPreWorkoutTheme] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
@@ -203,12 +206,14 @@ export default function Workouts() {
         }
       }
       refetchTodayWorkout();
+      setPreWorkoutTheme(theme);
+      setTheme('gym');
       setIsWorkoutMode(true);
       setWorkoutStartTime(Date.now());
       setElapsedSeconds(0);
       setPausedElapsed(0);
       setIsPaused(false);
-      toast({ title: 'Workout started! 💪' });
+      toast({ title: 'Workout started! 💪 Gym Mode activated' });
     } catch (error) {
       toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }
@@ -218,13 +223,15 @@ export default function Workouts() {
     try {
       const result = await createWorkoutLog.mutateAsync({ template_id: null, workout_date: dateStr });
       refetchTodayWorkout();
+      setPreWorkoutTheme(theme);
+      setTheme('gym');
       setIsWorkoutMode(true);
       setWorkoutStartTime(Date.now());
       setElapsedSeconds(0);
       setPausedElapsed(0);
       setIsPaused(false);
       setShowExercisePicker(true);
-      toast({ title: 'Quick Workout started! ⚡' });
+      toast({ title: 'Quick Workout started! ⚡ Gym Mode activated' });
     } catch (error) {
       toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }
@@ -253,6 +260,7 @@ export default function Workouts() {
 
   const confirmExitWorkout = () => {
     setIsWorkoutMode(false);
+    if (preWorkoutTheme) setTheme(preWorkoutTheme as any);
     setWorkoutStartTime(null);
     setIsPaused(false);
     setShowExitDialog(false);
@@ -263,6 +271,7 @@ export default function Workouts() {
     try {
       await updateWorkoutLog.mutateAsync({ id: currentWorkout.id, completed: true });
       setIsWorkoutMode(false);
+      if (preWorkoutTheme) setTheme(preWorkoutTheme as any);
       setWorkoutStartTime(null);
       setShowSummary(true);
     } catch (error) {
@@ -295,12 +304,14 @@ export default function Workouts() {
         }
       }
       refetchTodayWorkout();
+      setPreWorkoutTheme(theme);
+      setTheme('gym');
       setIsWorkoutMode(true);
       setWorkoutStartTime(Date.now());
       setElapsedSeconds(0);
       setPausedElapsed(0);
       setIsPaused(false);
-      toast({ title: `${template.name} started! 💪` });
+      toast({ title: `${template.name} started! 💪 Gym Mode activated` });
     } catch (error) {
       toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }

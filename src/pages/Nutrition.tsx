@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { format } from 'date-fns';
-import { Plus, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, startOfWeek, endOfWeek } from 'date-fns';
+import { Plus, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -17,9 +17,13 @@ import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState'
 import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
 import { WaterTracker } from '@/components/nutrition/WaterTracker';
 import { BarcodeScanner } from '@/components/nutrition/BarcodeScanner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   
@@ -40,6 +44,22 @@ export default function Nutrition() {
   const [scannedProduct, setScannedProduct] = useState<{name: string; calories: number; protein: number; carbs: number; fats: number; barcode?: string} | null>(null);
   const [scannedQty, setScannedQty] = useState('100');
   const [scannedMealId, setScannedMealId] = useState<string | null>(null);
+
+  // Cardio calories for selected date
+  const { data: cardioCalories = 0 } = useQuery({
+    queryKey: ['cardio-calories', user?.id, dateStr],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { data, error } = await supabase
+        .from('cardio_logs')
+        .select('calories_burned')
+        .eq('user_id', user.id)
+        .eq('session_date', dateStr);
+      if (error) return 0;
+      return (data || []).reduce((s, l) => s + (l.calories_burned || 0), 0);
+    },
+    enabled: !!user,
+  });
 
   // Determine if today is a training day based on workout
   const isActualTrainingDay = !!todayWorkout;
@@ -197,6 +217,14 @@ export default function Nutrition() {
             <div className="text-xs text-muted-foreground mt-1">
               / {targets.calories} kcal
             </div>
+            {cardioCalories > 0 && (
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <Activity className="h-3 w-3 text-orange-400" />
+                <span className="text-muted-foreground">Burned:</span>
+                <span className="font-medium text-orange-400">{cardioCalories} kcal</span>
+                <span className="text-muted-foreground">from cardio</span>
+              </div>
+            )}
           </CardContent>
         </Card>
         
