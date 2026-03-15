@@ -36,7 +36,7 @@ export default function Exercises() {
     });
   }, [exercises, searchQuery, muscleFilter, equipmentFilter]);
 
-  // Calculate volume per muscle group for heat map
+  // Volume per muscle group for heat map + counts
   const muscleVolume = useMemo(() => {
     const counts: Record<string, number> = {};
     exercises.forEach(ex => {
@@ -46,6 +46,18 @@ export default function Exercises() {
       }
     });
     return Object.entries(counts).map(([muscleId, volume]) => ({ muscleId, volume }));
+  }, [exercises]);
+
+  // Muscle group exercise counts
+  const muscleCountMap = useMemo(() => {
+    const counts: Record<string, number> = {};
+    exercises.forEach(ex => {
+      if (ex.primary_muscle_name) {
+        const key = ex.primary_muscle_name;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    });
+    return counts;
   }, [exercises]);
 
   const handleAnatomyClick = (muscleId: string, muscleName: string) => {
@@ -118,6 +130,16 @@ export default function Exercises() {
                     ? `Showing ${filteredExercises.length} exercises targeting ${muscleFilter}`
                     : 'Click on any muscle to filter exercises. Color intensity shows exercise variety.'}
                 </p>
+                {/* Muscle group counts */}
+                {muscleFilter === 'all' && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(muscleCountMap).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([name, count]) => (
+                      <Badge key={name} variant="secondary" className="text-[10px] cursor-pointer" onClick={() => setMuscleFilter(name.toLowerCase())}>
+                        {name} ({count})
+                      </Badge>
+                    ))}
+                  </div>
+                )}
                 {/* Subgroup breakdown */}
                 {muscleFilter !== 'all' && (() => {
                   const subgroupCounts: Record<string, number> = {};
@@ -141,7 +163,30 @@ export default function Exercises() {
         </Card>
       )}
 
-      {/* Filters */}
+      {/* Equipment Filter Row */}
+      <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <Button
+          variant={equipmentFilter === 'all' ? 'default' : 'outline'}
+          size="sm"
+          className="shrink-0"
+          onClick={() => setEquipmentFilter('all')}
+        >
+          All
+        </Button>
+        {equipmentTypes.map(type => (
+          <Button
+            key={type}
+            variant={equipmentFilter === type ? 'default' : 'outline'}
+            size="sm"
+            className="shrink-0"
+            onClick={() => setEquipmentFilter(type)}
+          >
+            {EQUIPMENT_INFO[type].icon} {EQUIPMENT_INFO[type].label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Search + Muscle Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -162,20 +207,6 @@ export default function Exercises() {
             {muscleGroups.map(muscle => (
               <SelectItem key={muscle.id} value={muscle.name.toLowerCase()}>
                 {muscle.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Select value={equipmentFilter} onValueChange={setEquipmentFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Equipment" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All equipment</SelectItem>
-            {equipmentTypes.map(type => (
-              <SelectItem key={type} value={type}>
-                {EQUIPMENT_INFO[type].icon} {EQUIPMENT_INFO[type].label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -217,17 +248,17 @@ export default function Exercises() {
             )}
           >
             {viewMode === 'grid' && (
-              <div className="relative">
-                <ExerciseImage
-                  exerciseId={exercise.id}
-                  exerciseName={exercise.name}
-                  equipment={exercise.equipment}
-                  imageUrl={exercise.image_url}
-                  primaryMuscle={exercise.primary_muscle_name}
-                  className="h-32 w-full"
-                  enableGeneration={true}
-                />
-              </div>
+              <ExerciseImage
+                exerciseId={exercise.id}
+                exerciseName={exercise.name}
+                equipment={exercise.equipment}
+                imageUrl={exercise.image_url}
+                primaryMuscle={exercise.primary_muscle_name}
+                coachingCues={exercise.coaching_cues}
+                className="rounded-t-lg rounded-b-none"
+                size="lg"
+                enableModal
+              />
             )}
             <CardHeader className={cn('pb-3', viewMode === 'compact' && 'p-2 pb-1')}>
               <div className="flex items-start justify-between gap-2">
@@ -245,7 +276,7 @@ export default function Exercises() {
               </div>
             </CardHeader>
             <CardContent className={cn('space-y-3', viewMode === 'compact' && 'p-2 pt-0 space-y-1')}>
-              {/* Muscle badges */}
+              {/* Muscle + equipment badges */}
               <div className="flex flex-wrap gap-1.5">
                 {exercise.primary_muscle_name && (
                   <Badge variant="default" className="text-xs">
@@ -262,15 +293,10 @@ export default function Exercises() {
                     {exercise.secondary_muscle_name}
                   </Badge>
                 )}
+                <Badge variant="outline" className="text-[10px]">
+                  {EQUIPMENT_INFO[exercise.equipment]?.icon} {EQUIPMENT_INFO[exercise.equipment]?.label}
+                </Badge>
               </div>
-              
-              {/* Equipment - only in grid view */}
-              {viewMode === 'grid' && (
-                <div className="text-sm text-muted-foreground flex items-center gap-1.5">
-                  <span>{EQUIPMENT_INFO[exercise.equipment]?.icon || '📦'}</span>
-                  <span>{EQUIPMENT_INFO[exercise.equipment]?.label || 'Other'}</span>
-                </div>
-              )}
               
               {/* Coaching cues - only in grid view */}
               {viewMode === 'grid' && exercise.coaching_cues && (
