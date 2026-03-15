@@ -106,6 +106,10 @@ export default function Dashboard() {
   const targetCalories = isTrainingDay ? (profile?.training_day_calories || 2556) : (profile?.rest_day_calories || 2556);
   const targetProtein = isTrainingDay ? (profile?.training_day_protein || 245) : (profile?.rest_day_protein || 245);
   const waterTarget = profile?.water_target_ml || 4000;
+  const weeklyWorkoutTarget = profile?.weekly_workout_target || 5;
+
+  // Target edit modals
+  const [editTarget, setEditTarget] = useState<{ label: string; unit: string; value: number; field: string; step?: number; min?: number; max?: number } | null>(null);
 
   const nutritionStats = useMemo(() => {
     if (!todayMeals) return { calories: 0, protein: 0, carbs: 0, fats: 0 };
