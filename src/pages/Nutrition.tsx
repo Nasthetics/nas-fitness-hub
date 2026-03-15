@@ -310,7 +310,7 @@ export default function Nutrition() {
         </Button>
       </div>
       <Sheet open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
-        <SheetContent side="bottom" className="h-[60vh] w-full max-w-[100vw] rounded-t-2xl px-4">
+        <SheetContent side="bottom" className="h-[50vh] w-full max-w-[100vw] rounded-t-2xl px-4">
           <div className="flex h-full flex-col">
             <SheetHeader className="pb-2">
               <SheetTitle className="text-left">Add Meal</SheetTitle>
@@ -322,6 +322,7 @@ export default function Nutrition() {
                   placeholder="e.g., Breakfast, Pre-workout, Dinner"
                   value={newMealName}
                   onChange={(e) => setNewMealName(e.target.value)}
+                  className="w-full"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -329,12 +330,12 @@ export default function Nutrition() {
                 <Label>Training day</Label>
               </div>
             </div>
-            <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-4 pb-[env(safe-area-inset-bottom,16px)]">
-              <Button variant="outline" onClick={() => setIsAddMealDialogOpen(false)}>
-                Cancel
+            <div className="mt-auto space-y-2 border-t border-border pt-4 pb-[env(safe-area-inset-bottom,16px)]">
+              <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()} className="w-full">
+                Create Meal
               </Button>
-              <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()}>
-                Create
+              <Button variant="outline" onClick={() => setIsAddMealDialogOpen(false)} className="w-full">
+                Cancel
               </Button>
             </div>
           </div>
