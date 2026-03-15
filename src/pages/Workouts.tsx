@@ -264,13 +264,18 @@ export default function Workouts() {
       await updateWorkoutLog.mutateAsync({ id: currentWorkout.id, completed: true });
       setIsWorkoutMode(false);
       setWorkoutStartTime(null);
-      toast({ title: 'Workout completed! 💪' });
-      // Offer to save as template if it was a quick workout
-      if (!currentWorkout.template_id && currentWorkout.exercise_logs?.length) {
-        setShowSaveTemplate(true);
-      }
+      setShowSummary(true);
     } catch (error) {
       toast({ title: 'Error completing workout', description: (error as Error).message, variant: 'destructive' });
+    }
+  };
+
+  const handleSummaryDone = () => {
+    setShowSummary(false);
+    toast({ title: 'Workout completed! 💪' });
+    // Offer to save as template if it was a quick workout
+    if (!currentWorkout?.template_id && currentWorkout?.exercise_logs?.length) {
+      setShowSaveTemplate(true);
     }
   };
 
