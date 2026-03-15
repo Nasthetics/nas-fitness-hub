@@ -419,10 +419,10 @@ export default function Dashboard() {
               <span className="text-xs font-medium">Weekly</span>
             </div>
             <div className="text-xl font-bold">
-              {weeklyWorkouts?.filter(w => w.completed).length || 0}/5
+              {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
             </div>
             <Progress 
-              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 5) * 100} 
+              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / weeklyWorkoutTarget) * 100} 
               className="h-1.5 mt-2" 
             />
             <span className="text-[10px] text-muted-foreground">workouts</span>
