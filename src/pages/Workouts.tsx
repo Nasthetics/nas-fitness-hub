@@ -260,6 +260,7 @@ export default function Workouts() {
 
   const confirmExitWorkout = () => {
     setIsWorkoutMode(false);
+    if (preWorkoutTheme) setTheme(preWorkoutTheme as any);
     setWorkoutStartTime(null);
     setIsPaused(false);
     setShowExitDialog(false);
