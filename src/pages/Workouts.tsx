@@ -478,7 +478,7 @@ export default function Workouts() {
     const brightModeClass = brightMode ? 'bg-white text-black' : 'bg-background';
 
     return (
-      <div className={cn('flex flex-col min-h-screen', brightModeClass)}>
+      <div className={cn('flex flex-col min-h-screen w-full max-w-[100vw] overflow-x-hidden', brightModeClass)}>
         {/* Paused overlay */}
         {isPaused && !showInactivityDialog && (
           <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur flex flex-col items-center justify-center gap-6">
