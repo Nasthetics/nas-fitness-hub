@@ -68,7 +68,7 @@ export default function Dashboard() {
 
   const isTrainingDay = todayWorkout?.template?.day_type !== 'rest';
   const targetCalories = isTrainingDay ? (profile?.training_day_calories || 2556) : (profile?.rest_day_calories || 2200);
-  const targetProtein = isTrainingDay ? (profile?.training_day_protein || 245) : (profile?.rest_day_protein || 180);
+  const targetProtein = isTrainingDay ? (profile?.training_day_protein || 246) : (profile?.rest_day_protein || 180);
   const waterTarget = profile?.water_target_ml || 4000;
 
   const nutritionStats = useMemo(() => {

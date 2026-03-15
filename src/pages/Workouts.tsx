@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, Plus, ChevronLeft, ChevronRight, Check, PlayCircle, Settings,
-  X, Pause, Play, AlertTriangle, Sun, Moon
+  X, Pause, Play, AlertTriangle, Sun, Moon, Zap
 } from 'lucide-react';
 import { useWakeLock } from '@/hooks/use-wake-lock';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
@@ -209,8 +209,23 @@ export default function Workouts() {
     }
   };
 
+  const handleQuickWorkout = async () => {
+    try {
+      const result = await createWorkoutLog.mutateAsync({ template_id: null, workout_date: dateStr });
+      refetchTodayWorkout();
+      setIsWorkoutMode(true);
+      setWorkoutStartTime(Date.now());
+      setElapsedSeconds(0);
+      setPausedElapsed(0);
+      setIsPaused(false);
+      setShowExercisePicker(true);
+      toast({ title: 'Quick Workout started! ⚡' });
+    } catch (error) {
+      toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
+    }
+  };
+
   const handleEnterWorkoutMode = () => {
-    setIsWorkoutMode(true);
     setWorkoutStartTime(Date.now());
     setElapsedSeconds(0);
     setPausedElapsed(0);
@@ -646,6 +661,19 @@ export default function Workouts() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick Workout Button */}
+      <Button 
+        onClick={handleQuickWorkout}
+        disabled={createWorkoutLog.isPending}
+        className="w-full h-16 text-lg font-bold rounded-xl gap-3 bg-info hover:bg-info/90 text-info-foreground"
+      >
+        <Zap className="h-6 w-6" />
+        <div className="flex flex-col items-start">
+          <span>Quick Workout</span>
+          <span className="text-xs font-normal opacity-80">Log any exercises freely</span>
+        </div>
+      </Button>
 
       {todayTemplate?.day_type === 'rest' ? (
         <Card className="border-muted">
