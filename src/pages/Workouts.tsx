@@ -801,6 +801,11 @@ export default function Workouts() {
       <PRCelebration show={prCelebration.show} exerciseName={prCelebration.exerciseName}
         oldRecord={prCelebration.oldRecord} newRecord={prCelebration.newRecord}
         onClose={() => setPrCelebration(prev => ({ ...prev, show: false }))} />
+      <SaveAsTemplateDialog
+        open={showSaveTemplate}
+        onOpenChange={setShowSaveTemplate}
+        exerciseLogs={currentWorkout?.exercise_logs || []}
+      />
     </div>
   );
 }
