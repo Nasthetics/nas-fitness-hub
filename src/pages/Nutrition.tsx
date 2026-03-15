@@ -45,6 +45,22 @@ export default function Nutrition() {
   const [scannedQty, setScannedQty] = useState('100');
   const [scannedMealId, setScannedMealId] = useState<string | null>(null);
 
+  // Cardio calories for selected date
+  const { data: cardioCalories = 0 } = useQuery({
+    queryKey: ['cardio-calories', user?.id, dateStr],
+    queryFn: async () => {
+      if (!user) return 0;
+      const { data, error } = await supabase
+        .from('cardio_logs')
+        .select('calories_burned')
+        .eq('user_id', user.id)
+        .eq('session_date', dateStr);
+      if (error) return 0;
+      return (data || []).reduce((s, l) => s + (l.calories_burned || 0), 0);
+    },
+    enabled: !!user,
+  });
+
   // Determine if today is a training day based on workout
   const isActualTrainingDay = !!todayWorkout;
 
