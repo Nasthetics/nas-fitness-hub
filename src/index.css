@@ -117,6 +117,122 @@
     --sidebar-border: 240 6% 15%;
     --sidebar-ring: 142 70% 45%;
   }
+
+  /* Light mode */
+  .light {
+    --background: 0 0% 96%;
+    --foreground: 0 0% 7%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 5% 92%;
+    --secondary-foreground: 0 0% 7%;
+
+    --muted: 240 5% 92%;
+    --muted-foreground: 240 5% 40%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 240 6% 88%;
+    --input: 240 6% 88%;
+    --ring: 142 76% 36%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --muscle-chest: 0 84% 60%;
+    --muscle-back: 199 89% 48%;
+    --muscle-shoulders: 280 65% 60%;
+    --muscle-arms: 38 92% 50%;
+    --muscle-legs: 142 76% 36%;
+    --muscle-core: 320 70% 60%;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 7%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 92%;
+    --sidebar-accent-foreground: 0 0% 7%;
+    --sidebar-border: 240 6% 88%;
+    --sidebar-ring: 142 76% 36%;
+  }
+
+  /* Gym mode - maximum contrast, bigger everything */
+  .gym {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 30%;
+
+    --accent: 142 76% 36%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 80%;
+    --input: 0 0% 80%;
+    --ring: 142 76% 36%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    --muscle-chest: 0 84% 50%;
+    --muscle-back: 199 89% 40%;
+    --muscle-shoulders: 280 65% 50%;
+    --muscle-arms: 38 92% 45%;
+    --muscle-legs: 142 76% 36%;
+    --muscle-core: 320 70% 50%;
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 142 76% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 94%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 80%;
+    --sidebar-ring: 142 76% 36%;
+
+    font-size: 120%;
+  }
+
+  .gym button,
+  .gym a,
+  .gym [role="button"] {
+    min-height: 56px;
+  }
 }
 
 @layer base {
