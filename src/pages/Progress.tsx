@@ -400,9 +400,10 @@ export default function Progress() {
 
       {/* Charts */}
       <Tabs defaultValue="weight" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="weight">Weight Trend</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="photos">Progress Photos</TabsTrigger>
         </TabsList>
         
