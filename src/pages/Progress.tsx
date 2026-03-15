@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { BulkQualityCard } from '@/components/progress/BulkQualityCard';
 import { AnalyticsTab } from '@/components/progress/AnalyticsTab';
+import { StrengthTab } from '@/components/progress/StrengthTab';
 import { useBodyMetrics, useCreateBodyMetric } from '@/hooks/use-fitness-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -403,6 +404,7 @@ export default function Progress() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="weight">Weight Trend</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
+          <TabsTrigger value="strength">Strength</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="photos">Progress Photos</TabsTrigger>
         </TabsList>
@@ -491,6 +493,10 @@ export default function Progress() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="strength">
+          <StrengthTab />
         </TabsContent>
 
         <TabsContent value="analytics">

@@ -15,6 +15,8 @@ import { WorkoutStatsBar } from '@/components/workouts/WorkoutStatsBar';
 import { ExercisePicker } from '@/components/workouts/ExercisePicker';
 import { ExerciseJumpNav } from '@/components/workouts/ExerciseJumpNav';
 import { POSuggestionsBanner } from '@/components/workouts/POSuggestionsBanner';
+import { WorkoutSummary } from '@/components/workouts/WorkoutSummary';
+import { DeloadBanner } from '@/components/workouts/DeloadBanner';
 import { getSmartRestSeconds } from '@/lib/smart-rest';
 import { 
   useWorkoutTemplates, useWorkoutLogs, useTodayWorkout, useCreateWorkoutLog,
@@ -44,6 +46,7 @@ export default function Workouts() {
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restTimerSeconds, setRestTimerSeconds] = useState(90);
   const [isPaused, setIsPaused] = useState(false);
@@ -261,13 +264,18 @@ export default function Workouts() {
       await updateWorkoutLog.mutateAsync({ id: currentWorkout.id, completed: true });
       setIsWorkoutMode(false);
       setWorkoutStartTime(null);
-      toast({ title: 'Workout completed! 💪' });
-      // Offer to save as template if it was a quick workout
-      if (!currentWorkout.template_id && currentWorkout.exercise_logs?.length) {
-        setShowSaveTemplate(true);
-      }
+      setShowSummary(true);
     } catch (error) {
       toast({ title: 'Error completing workout', description: (error as Error).message, variant: 'destructive' });
+    }
+  };
+
+  const handleSummaryDone = () => {
+    setShowSummary(false);
+    toast({ title: 'Workout completed! 💪' });
+    // Offer to save as template if it was a quick workout
+    if (!currentWorkout?.template_id && currentWorkout?.exercise_logs?.length) {
+      setShowSaveTemplate(true);
     }
   };
 
@@ -406,6 +414,17 @@ export default function Workouts() {
   }, [currentWorkout?.exercise_logs]);
 
   const hasTemplates = templates && templates.length > 0;
+
+  // ===================== WORKOUT SUMMARY SCREEN =====================
+  if (showSummary && currentWorkout) {
+    return (
+      <WorkoutSummary
+        workout={currentWorkout}
+        elapsedSeconds={elapsedSeconds}
+        onContinue={handleSummaryDone}
+      />
+    );
+  }
 
   // ===================== FULLSCREEN WORKOUT MODE =====================
   if (isWorkoutMode && currentWorkout) {
@@ -694,6 +713,9 @@ export default function Workouts() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Deload Banner */}
+      <DeloadBanner />
 
       {/* Quick Workout Button */}
       <Button 

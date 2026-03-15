@@ -5,18 +5,19 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Dumbbell, Pill, PlayCircle, Scale, Flame, Zap, Droplets,
-  Heart, Apple, ChevronRight
+  Dumbbell, Pill, Scale, Flame, Zap, Droplets,
+  Heart, Apple, ChevronRight, Clock
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  useTodayWorkout, useWorkoutLogs, useMealLogs, 
+  useTodayWorkout, useWorkoutLogs, useMealLogs, useWorkoutTemplates,
   useSupplements, useSupplementLogs, useBodyMetrics, useProfile
 } from '@/hooks/use-fitness-data';
 import { WORKOUT_DAY_INFO, type WorkoutDayType } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { DeloadBanner } from '@/components/workouts/DeloadBanner';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function Dashboard() {
   const { data: supplementLogs } = useSupplementLogs(today);
   const { data: bodyMetrics } = useBodyMetrics(30);
   const { data: profile } = useProfile();
+  const { data: templates } = useWorkoutTemplates();
 
   // Water today
   const { data: waterLogs = [] } = useQuery({
@@ -66,6 +68,39 @@ export default function Dashboard() {
     enabled: !!user,
   });
 
+  // Workout streak
+  const { data: allWorkouts = [] } = useQuery({
+    queryKey: ['workout-streak', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from('workout_logs')
+        .select('workout_date')
+        .eq('user_id', user.id)
+        .eq('completed', true)
+        .order('workout_date', { ascending: false })
+        .limit(60);
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const streak = useMemo(() => {
+    if (allWorkouts.length === 0) return 0;
+    let count = 0;
+    let checkDate = new Date();
+    // If no workout today, start from yesterday
+    const todayHasWorkout = allWorkouts.some(w => w.workout_date === format(checkDate, 'yyyy-MM-dd'));
+    if (!todayHasWorkout) checkDate = subDays(checkDate, 1);
+    
+    const dates = new Set(allWorkouts.map(w => w.workout_date));
+    while (dates.has(format(checkDate, 'yyyy-MM-dd'))) {
+      count++;
+      checkDate = subDays(checkDate, 1);
+    }
+    return count;
+  }, [allWorkouts]);
+
   const isTrainingDay = todayWorkout?.template?.day_type !== 'rest';
   const targetCalories = isTrainingDay ? (profile?.training_day_calories || 2556) : (profile?.rest_day_calories || 2200);
   const targetProtein = isTrainingDay ? (profile?.training_day_protein || 246) : (profile?.rest_day_protein || 180);
@@ -88,14 +123,30 @@ export default function Dashboard() {
   const takenCount = supplementLogs?.filter(l => l.taken).length || 0;
   const workoutDone = todayWorkout?.completed || false;
 
-  // Greeting
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
 
-  // Recovery score color
   const recoveryScore = todayRecovery?.recovery_score || 0;
   const recoveryColor = recoveryScore >= 85 ? 'text-green-500' : recoveryScore >= 65 ? 'text-yellow-500' : recoveryScore >= 40 ? 'text-orange-500' : 'text-red-500';
   const recoveryBg = recoveryScore >= 85 ? 'bg-green-500/10' : recoveryScore >= 65 ? 'bg-yellow-500/10' : recoveryScore >= 40 ? 'bg-orange-500/10' : 'bg-red-500/10';
+
+  // Today's template (for daily brief)
+  const todayDayNumber = new Date().getDay() === 0 ? 7 : new Date().getDay();
+  const todayTemplate = templates?.find(t => t.day_number === todayDayNumber);
+  const todayMuscles = todayTemplate ? WORKOUT_DAY_INFO[todayTemplate.day_type as WorkoutDayType]?.muscles || [] : [];
+
+  // Nutrition remaining
+  const caloriesRemaining = Math.max(0, targetCalories - Math.round(nutritionStats.calories));
+  const calColor = caloriesRemaining > 500 ? 'text-green-400' : caloriesRemaining > 200 ? 'text-yellow-400' : 'text-red-400';
+
+  // Next supplement due
+  const nextSupplement = useMemo(() => {
+    const untaken = activeSupps.filter(s => {
+      const log = supplementLogs?.find(l => l.supplement_id === s.id);
+      return !log?.taken;
+    });
+    return untaken[0] || null;
+  }, [activeSupps, supplementLogs]);
 
   // Progress ring helper
   const Ring = ({ value, max, size = 80, color, label }: { value: number; max: number; size?: number; color: string; label: string }) => {
@@ -128,6 +179,9 @@ export default function Dashboard() {
         <p className="text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
       </div>
 
+      {/* Deload Banner */}
+      <DeloadBanner />
+
       {/* 5 Progress Rings */}
       <Card>
         <CardContent className="pt-6">
@@ -143,7 +197,6 @@ export default function Dashboard() {
 
       {/* Recovery Score + Today's Workout */}
       <div className="grid md:grid-cols-2 gap-4">
-        {/* Recovery */}
         <Card className={recoveryBg}>
           <CardContent className="pt-6 flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card">
@@ -167,7 +220,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Today's Workout */}
         <Card className="border-primary/20">
           <CardContent className="pt-6 flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
@@ -195,20 +247,99 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - FIXED with labels and larger icons */}
       <div className="grid grid-cols-3 gap-3">
-        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => navigate('/nutrition')}>
-          <Apple className="h-5 w-5 text-green-500" />
-          <span className="text-xs">Log Meal</span>
+        <Button variant="outline" className="h-auto py-5 flex flex-col gap-2 border-blue-500/20 hover:bg-blue-500/5" onClick={() => navigate('/workouts')}>
+          <Dumbbell className="h-8 w-8 text-blue-500" />
+          <span className="text-xs font-medium">Log Workout</span>
         </Button>
-        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => navigate('/workouts')}>
-          <PlayCircle className="h-5 w-5 text-primary" />
-          <span className="text-xs">Start Workout</span>
+        <Button variant="outline" className="h-auto py-5 flex flex-col gap-2 border-green-500/20 hover:bg-green-500/5" onClick={() => navigate('/nutrition')}>
+          <Apple className="h-8 w-8 text-green-500" />
+          <span className="text-xs font-medium">Add Meal</span>
         </Button>
-        <Button variant="outline" className="h-auto py-4 flex flex-col gap-2" onClick={() => navigate('/supplements')}>
-          <Pill className="h-5 w-5 text-purple-400" />
-          <span className="text-xs">Check Supps</span>
+        <Button variant="outline" className="h-auto py-5 flex flex-col gap-2 border-orange-500/20 hover:bg-orange-500/5" onClick={() => navigate('/progress')}>
+          <Scale className="h-8 w-8 text-orange-500" />
+          <span className="text-xs font-medium">Log Weight</span>
         </Button>
+      </div>
+
+      {/* Daily Brief — 2x2 grid */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Today's Workout Plan */}
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/workouts')}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Dumbbell className="h-4 w-4 text-primary" />
+              <span className="text-xs font-medium">Today's Plan</span>
+            </div>
+            {todayTemplate && todayTemplate.day_type !== 'rest' ? (
+              <>
+                <p className="text-sm font-bold">{WORKOUT_DAY_INFO[todayTemplate.day_type as WorkoutDayType]?.label}</p>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {todayMuscles.slice(0, 3).map(m => (
+                    <Badge key={m} variant="outline" className="text-[9px] px-1 py-0">{m}</Badge>
+                  ))}
+                </div>
+              </>
+            ) : todayTemplate?.day_type === 'rest' ? (
+              <p className="text-sm text-muted-foreground">😴 Rest Day</p>
+            ) : (
+              <Button variant="link" className="p-0 h-auto text-xs text-primary" onClick={(e) => { e.stopPropagation(); navigate('/workouts'); }}>
+                Set Up Routine →
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Supplement Alert */}
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/supplements')}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Pill className="h-4 w-4 text-purple-500" />
+              <span className="text-xs font-medium">Next Supplement</span>
+            </div>
+            {nextSupplement ? (
+              <>
+                <p className="text-sm font-bold">{nextSupplement.name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {nextSupplement.timing?.map(t => t === 'AM' ? 'Morning' : t === 'PM' ? 'Evening' : t.replace('_', ' ')).join(', ') || 'Anytime'}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-green-400">✅ All taken!</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Nutrition Status */}
+        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/nutrition')}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Flame className="h-4 w-4 text-orange-500" />
+              <span className="text-xs font-medium">Calories Left</span>
+            </div>
+            <p className={`text-xl font-bold ${calColor}`}>{caloriesRemaining}</p>
+            <p className="text-[10px] text-muted-foreground">kcal remaining</p>
+          </CardContent>
+        </Card>
+
+        {/* Streak */}
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-base">🔥</span>
+              <span className="text-xs font-medium">Streak</span>
+            </div>
+            {streak > 0 ? (
+              <>
+                <p className="text-xl font-bold">{streak}</p>
+                <p className="text-[10px] text-muted-foreground">consecutive days</p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">Start your streak today!</p>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Daily Stats Grid */}
@@ -249,12 +380,17 @@ export default function Dashboard() {
         <Card>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-2 mb-1">
-              <Pill className="h-3 w-3 text-purple-500" />
-              <span className="text-xs font-medium">Supplements</span>
+              <Dumbbell className="h-3 w-3 text-primary" />
+              <span className="text-xs font-medium">Weekly</span>
             </div>
-            <div className="text-xl font-bold">{takenCount}/{activeSupps.length}</div>
-            <Progress value={activeSupps.length > 0 ? (takenCount / activeSupps.length) * 100 : 0} className="h-1.5 mt-2" />
-            <span className="text-[10px] text-muted-foreground">taken today</span>
+            <div className="text-xl font-bold">
+              {weeklyWorkouts?.filter(w => w.completed).length || 0}/5
+            </div>
+            <Progress 
+              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 5) * 100} 
+              className="h-1.5 mt-2" 
+            />
+            <span className="text-[10px] text-muted-foreground">workouts</span>
           </CardContent>
         </Card>
       </div>
