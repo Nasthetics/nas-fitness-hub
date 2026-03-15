@@ -144,6 +144,9 @@ export default function Nutrition() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <BarcodeScanner onProductScanned={(product) => {
+            setScannedProduct(product);
+          }} />
           <Button variant="outline" size="icon" onClick={() => navigateDate(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
