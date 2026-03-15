@@ -65,6 +65,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cardio_logs: {
+        Row: {
+          activity_type: string
+          avg_heart_rate: number | null
+          calories_burned: number | null
+          created_at: string
+          distance_km: number | null
+          duration_minutes: number
+          id: string
+          notes: string | null
+          perceived_effort: number | null
+          session_date: string
+          user_id: string
+        }
+        Insert: {
+          activity_type?: string
+          avg_heart_rate?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          session_date?: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          avg_heart_rate?: number | null
+          calories_burned?: number | null
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number
+          id?: string
+          notes?: string | null
+          perceived_effort?: number | null
+          session_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       compounds_reference: {
         Row: {
           created_at: string
