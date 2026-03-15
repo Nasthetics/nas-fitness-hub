@@ -154,14 +154,14 @@ export default function Dashboard() {
   }, [activeSupps, supplementLogs]);
 
   // Progress ring helper with edit
-  const Ring = ({ value, max, size = 80, color, label, onEdit }: { value: number; max: number; size?: number; color: string; label: string; onEdit?: () => void }) => {
+  const Ring = ({ value, max, size = 80, color, label, subtext, onEdit }: { value: number; max: number; size?: number; color: string; label: string; subtext?: string; onEdit?: () => void }) => {
     const sw = 6;
     const r = (size - sw) / 2;
     const c = r * 2 * Math.PI;
     const pct = Math.min(value / max, 1);
     const off = c - pct * c;
     return (
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-0.5">
         <div className="relative" style={{ width: size, height: size }}>
           <svg width={size} height={size} className="-rotate-90">
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={sw} />
@@ -174,6 +174,9 @@ export default function Dashboard() {
         <span className="text-xs text-muted-foreground">{label}</span>
         {!isTrainingDay && label === 'Calories' && (
           <Badge variant="outline" className="text-[8px] px-1 py-0">Rest Day</Badge>
+        )}
+        {subtext && (
+          <span className="text-[10px] text-muted-foreground">{subtext}</span>
         )}
         {onEdit && (
           <button onClick={onEdit} className="text-muted-foreground hover:text-primary transition-colors">
