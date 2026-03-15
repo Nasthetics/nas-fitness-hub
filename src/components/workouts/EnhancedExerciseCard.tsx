@@ -94,14 +94,25 @@ export function EnhancedExerciseCard({
       <CardHeader className="pb-2 sticky top-0 z-10 bg-card border-b border-border/30">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-info/20 text-xs font-bold text-info">
-              {exerciseNumber}
-            </span>
-            <span 
-              className="cursor-pointer hover:text-info transition-colors"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
-              {exercise?.name || 'Exercise'}
+            <ExerciseImage
+              exerciseName={exercise?.name || 'Exercise'}
+              equipment={exercise?.equipment || 'other'}
+              imageUrl={exercise?.image_url}
+              primaryMuscle={exercise?.primary_muscle_name}
+              size="sm"
+              enableModal={false}
+              className="shrink-0 rounded-md"
+            />
+            <div className="flex flex-col min-w-0">
+              <span 
+                className="cursor-pointer hover:text-info transition-colors truncate"
+                onClick={() => setIsCollapsed(!isCollapsed)}
+              >
+                {exercise?.name || 'Exercise'}
+              </span>
+              {exercise?.muscle_subgroup && (
+                <span className="text-[10px] text-muted-foreground font-normal">{exercise.muscle_subgroup}</span>
+              )}
               {sets.length > 0 && (
                 <span className="text-xs text-muted-foreground ml-1">· Set {sets.length}{totalExercises ? `/${templateExercise?.default_sets || '?'}` : ''}</span>
               )}
