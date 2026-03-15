@@ -113,11 +113,28 @@ export default function Exercises() {
                     ? `${muscleFilter.charAt(0).toUpperCase() + muscleFilter.slice(1)} Exercises`
                     : 'Select a Muscle Group'}
                 </h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mb-3">
                   {muscleFilter !== 'all' 
                     ? `Showing ${filteredExercises.length} exercises targeting ${muscleFilter}`
                     : 'Click on any muscle to filter exercises. Color intensity shows exercise variety.'}
                 </p>
+                {/* Subgroup breakdown */}
+                {muscleFilter !== 'all' && (() => {
+                  const subgroupCounts: Record<string, number> = {};
+                  filteredExercises.forEach(ex => {
+                    const sg = ex.muscle_subgroup || 'Unclassified';
+                    subgroupCounts[sg] = (subgroupCounts[sg] || 0) + 1;
+                  });
+                  return Object.keys(subgroupCounts).length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(subgroupCounts).map(([sg, count]) => (
+                        <Badge key={sg} variant="secondary" className="text-[10px]">
+                          {sg} ({count})
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           </CardContent>
