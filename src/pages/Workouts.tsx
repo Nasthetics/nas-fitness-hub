@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { WorkoutMusclePreview } from '@/components/workouts/WorkoutMusclePreview';
 import { EnhancedExerciseCard } from '@/components/workouts/EnhancedExerciseCard';
 import { WorkoutTemplateSetup } from '@/components/workouts/WorkoutTemplateSetup';
+import { TemplateLibrary, SaveAsTemplateDialog } from '@/components/workouts/TemplateLibrary';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkoutMode } from '@/components/layout/AppLayout';
@@ -42,6 +43,7 @@ export default function Workouts() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restTimerSeconds, setRestTimerSeconds] = useState(90);
   const [isPaused, setIsPaused] = useState(false);
@@ -260,8 +262,39 @@ export default function Workouts() {
       setIsWorkoutMode(false);
       setWorkoutStartTime(null);
       toast({ title: 'Workout completed! 💪' });
+      // Offer to save as template if it was a quick workout
+      if (!currentWorkout.template_id && currentWorkout.exercise_logs?.length) {
+        setShowSaveTemplate(true);
+      }
     } catch (error) {
       toast({ title: 'Error completing workout', description: (error as Error).message, variant: 'destructive' });
+    }
+  };
+
+  const handleStartFromTemplate = async (template: any) => {
+    try {
+      const result = await createWorkoutLog.mutateAsync({ template_id: template.id, workout_date: dateStr });
+      // Fetch template exercises and create exercise logs
+      const { data: texs } = await supabase.from('template_exercises')
+        .select('exercise_id, exercise_order')
+        .eq('template_id', template.id)
+        .order('exercise_order');
+      if (texs) {
+        for (const te of texs) {
+          await createExerciseLog.mutateAsync({
+            workout_log_id: result.id, exercise_id: te.exercise_id, exercise_order: te.exercise_order,
+          });
+        }
+      }
+      refetchTodayWorkout();
+      setIsWorkoutMode(true);
+      setWorkoutStartTime(Date.now());
+      setElapsedSeconds(0);
+      setPausedElapsed(0);
+      setIsPaused(false);
+      toast({ title: `${template.name} started! 💪` });
+    } catch (error) {
+      toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }
   };
 
@@ -675,6 +708,9 @@ export default function Workouts() {
         </div>
       </Button>
 
+      {/* Template Library */}
+      <TemplateLibrary onStartFromTemplate={handleStartFromTemplate} />
+
       {todayTemplate?.day_type === 'rest' ? (
         <Card className="border-muted">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -768,6 +804,11 @@ export default function Workouts() {
       <PRCelebration show={prCelebration.show} exerciseName={prCelebration.exerciseName}
         oldRecord={prCelebration.oldRecord} newRecord={prCelebration.newRecord}
         onClose={() => setPrCelebration(prev => ({ ...prev, show: false }))} />
+      <SaveAsTemplateDialog
+        open={showSaveTemplate}
+        onOpenChange={setShowSaveTemplate}
+        exerciseLogs={currentWorkout?.exercise_logs || []}
+      />
     </div>
   );
 }

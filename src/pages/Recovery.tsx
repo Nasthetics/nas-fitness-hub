@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { MuscleHeatmap } from '@/components/recovery/MuscleHeatmap';
 
 interface RecoveryCheckin {
   id: string;
@@ -125,6 +126,8 @@ export default function Recovery() {
         <h1 className="text-3xl font-bold text-foreground">Recovery</h1>
         <p className="text-muted-foreground mt-1">Daily 10-second check-in</p>
       </div>
+      {/* Muscle Recovery Heatmap */}
+      <MuscleHeatmap />
 
       {/* Score Display */}
       <div className="grid md:grid-cols-2 gap-4">
