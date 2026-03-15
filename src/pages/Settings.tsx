@@ -60,7 +60,7 @@ export default function Settings() {
       setTargetGain(profile.target_weight_gain_per_week?.toString() || '0.3');
       setWaterTarget(profile.water_target_ml?.toString() || '4000');
       setTrainingCal(profile.training_day_calories?.toString() || '2556');
-      setTrainingP(profile.training_day_protein?.toString() || '246');
+      setTrainingP(profile.training_day_protein?.toString() || '245');
       setTrainingC(profile.training_day_carbs?.toString() || '189');
       setTrainingF(profile.training_day_fats?.toString() || '91');
       setRamadanMode(profile.ramadan_mode || false);
@@ -76,7 +76,7 @@ export default function Settings() {
       target_weight_gain_per_week: targetGain ? parseFloat(targetGain) : 0.3,
       water_target_ml: waterTarget ? parseInt(waterTarget) : 4000,
       training_day_calories: trainingCal ? parseInt(trainingCal) : 2556,
-      training_day_protein: trainingP ? parseInt(trainingP) : 246,
+      training_day_protein: trainingP ? parseInt(trainingP) : 245,
       training_day_carbs: trainingC ? parseInt(trainingC) : 189,
       training_day_fats: trainingF ? parseInt(trainingF) : 91,
       ramadan_mode: ramadanMode,

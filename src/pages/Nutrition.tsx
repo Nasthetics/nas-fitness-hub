@@ -61,20 +61,24 @@ export default function Nutrition() {
     enabled: !!user,
   });
 
-  // Determine if today is a training day based on workout
-  const isActualTrainingDay = !!todayWorkout;
+  // Determine if today is a training day (match Dashboard logic: default to Training unless explicitly a Rest day)
+  const isActualTrainingDay = todayWorkout?.template?.day_type !== 'rest';
 
   // Calculate daily totals
   const dailyTotals = useMemo(() => {
     return mealLogs.reduce((acc, meal) => {
-      const mealTotals = meal.meal_items?.reduce((mealAcc, item) => ({
-        calories: mealAcc.calories + (item.calories || 0),
-        protein: mealAcc.protein + (item.protein || 0),
-        carbs: mealAcc.carbs + (item.carbs || 0),
-        fats: mealAcc.fats + (item.fats || 0),
-        fiber: mealAcc.fiber + (item.fiber || 0),
-      }), { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 }) || { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
-      
+      const mealTotals =
+        meal.meal_items?.reduce(
+          (mealAcc, item) => ({
+            calories: mealAcc.calories + (item.calories || 0),
+            protein: mealAcc.protein + (item.protein || 0),
+            carbs: mealAcc.carbs + (item.carbs || 0),
+            fats: mealAcc.fats + (item.fats || 0),
+            fiber: mealAcc.fiber + (item.fiber || 0),
+          }),
+          { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 },
+        ) || { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
+
       return {
         calories: acc.calories + mealTotals.calories,
         protein: acc.protein + mealTotals.protein,
@@ -86,10 +90,10 @@ export default function Nutrition() {
   }, [mealLogs]);
 
   // Get targets based on training/rest day
-  const targets = isActualTrainingDay 
-    ? { 
+  const targets = isActualTrainingDay
+    ? {
         calories: profile?.training_day_calories || 2556,
-        protein: profile?.training_day_protein || 246,
+        protein: profile?.training_day_protein || 245,
         carbs: profile?.training_day_carbs || 189,
         fats: profile?.training_day_fats || 91,
       }
