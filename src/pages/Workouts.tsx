@@ -285,9 +285,25 @@ export default function Workouts() {
   };
 
   const recentExerciseIds = useMemo(() => {
+    // Pull from localStorage for cross-session recency, fallback to current workout
+    try {
+      const stored = JSON.parse(localStorage.getItem('recent-exercises') || '[]');
+      if (stored.length > 0) return stored.slice(0, 10);
+    } catch {}
     if (!currentWorkout?.exercise_logs) return [];
     return currentWorkout.exercise_logs.map(el => el.exercise_id);
   }, [currentWorkout]);
+
+  // Track recently used exercises in localStorage
+  useEffect(() => {
+    if (!currentWorkout?.exercise_logs?.length) return;
+    const ids = currentWorkout.exercise_logs.map(el => el.exercise_id);
+    try {
+      const existing: string[] = JSON.parse(localStorage.getItem('recent-exercises') || '[]');
+      const merged = [...new Set([...ids, ...existing])].slice(0, 20);
+      localStorage.setItem('recent-exercises', JSON.stringify(merged));
+    } catch {}
+  }, [currentWorkout?.exercise_logs]);
 
   const hasTemplates = templates && templates.length > 0;
   const exerciseCount = currentWorkout?.exercise_logs?.length || 0;
