@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Dumbbell, Plus, ChevronLeft, ChevronRight, Check, PlayCircle, Settings,
-  X, Pause, Play, AlertTriangle, Sun, Moon
+  X, Pause, Play, AlertTriangle, Sun, Moon, Zap
 } from 'lucide-react';
 import { useWakeLock } from '@/hooks/use-wake-lock';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
