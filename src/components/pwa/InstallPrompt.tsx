@@ -8,17 +8,16 @@ export function InstallPrompt() {
   const deferredPromptRef = useRef<any>(null);
 
   useEffect(() => {
-    if (localStorage.getItem('pwa_prompt_shown')) return;
+    if (localStorage.getItem('pwa_banner_dismissed')) return;
 
     const ua = navigator.userAgent;
     const ios = /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    if (isStandalone) return; // Already installed
+    if (isStandalone) return;
 
     setIsIOS(ios);
 
     if (ios) {
-      // Show after a short delay
       setTimeout(() => setShow(true), 3000);
     } else {
       const handler = (e: Event) => {
@@ -41,41 +40,41 @@ export function InstallPrompt() {
 
   const dismiss = () => {
     setShow(false);
-    localStorage.setItem('pwa_prompt_shown', 'true');
+    localStorage.setItem('pwa_banner_dismissed', 'true');
   };
 
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 animate-in rounded-xl bg-card border border-border shadow-xl p-4 max-w-md mx-auto">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/20 shrink-0">
-          <Smartphone className="h-5 w-5 text-info" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground">
-            📱 Add to Home Screen for the best gym experience
-          </p>
-          {isIOS && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Tap <span className="font-medium">Share</span> → <span className="font-medium">Add to Home Screen</span>
-            </p>
-          )}
-          <div className="flex gap-2 mt-3">
-            {!isIOS && (
-              <Button size="sm" onClick={handleInstall} className="bg-info hover:bg-info/90 text-info-foreground rounded-lg">
-                Add to Home Screen
-              </Button>
-            )}
-            <Button size="sm" variant="ghost" onClick={dismiss} className="text-muted-foreground">
-              Not now
-            </Button>
-          </div>
-        </div>
-        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground">
+    <div className="fixed top-0 left-0 right-0 z-[9999] bg-card border-b border-border shadow-md">
+      <div className="flex items-center gap-2 px-3 py-2 max-w-screen-lg mx-auto" style={{ height: 56 }}>
+        <Smartphone className="h-5 w-5 text-primary shrink-0" />
+        <p className="text-xs font-medium text-foreground flex-1 min-w-0 truncate">
+          {isIOS
+            ? 'Tap Share → Add to Home Screen'
+            : 'Add Nas Fitness OS to your home screen'}
+        </p>
+        {!isIOS && (
+          <Button size="sm" onClick={handleInstall} className="h-7 px-3 text-xs rounded-md shrink-0">
+            Install
+          </Button>
+        )}
+        <button onClick={dismiss} className="text-muted-foreground hover:text-foreground shrink-0 p-1">
           <X className="h-4 w-4" />
         </button>
       </div>
     </div>
   );
+}
+
+export function useInstallBannerVisible() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (localStorage.getItem('pwa_banner_dismissed')) return;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (isStandalone) return;
+    const timer = setTimeout(() => setVisible(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+  return visible;
 }
