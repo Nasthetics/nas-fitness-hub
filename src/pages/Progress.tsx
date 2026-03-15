@@ -492,6 +492,10 @@ export default function Progress() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="analytics">
+          <AnalyticsTab />
+        </TabsContent>
         
         <TabsContent value="photos">
           <Card>
