@@ -1,0 +1,1 @@
+CREATE POLICY "Allow updating exercise library" ON public.exercise_library FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
