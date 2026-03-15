@@ -129,6 +129,8 @@ export interface SetLog {
   rest_seconds: number | null;
   notes: string | null;
   is_pr: boolean;
+  is_dropset?: boolean;
+  superset_group_id?: string | null;
   created_at: string;
 }
 

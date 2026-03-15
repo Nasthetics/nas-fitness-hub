@@ -4,9 +4,7 @@ import {
   Dumbbell,
   BookOpen,
   Apple,
-  ShoppingCart,
   Pill,
-  FlaskConical,
   TrendingUp,
   LogOut,
   User,
@@ -37,9 +35,7 @@ const mainNavItems = [
   { title: 'Workouts', url: '/workouts', icon: Dumbbell },
   { title: 'Exercises', url: '/exercises', icon: BookOpen },
   { title: 'Nutrition', url: '/nutrition', icon: Apple },
-  { title: 'Groceries', url: '/groceries', icon: ShoppingCart },
   { title: 'Supplements', url: '/supplements', icon: Pill },
-  { title: 'Compounds', url: '/compounds', icon: FlaskConical },
   { title: 'Progress', url: '/progress', icon: TrendingUp },
 ];
 

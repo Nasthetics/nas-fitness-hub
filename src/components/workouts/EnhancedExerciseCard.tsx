@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Trophy, Lightbulb } from 'lucide-react';
 import { QuickSetInput } from './QuickSetInput';
 import { cn } from '@/lib/utils';
 import type { SetLog, ExerciseLog, TemplateExercise } from '@/lib/types';
@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PreviousSetData {
   weight_kg: number | null;
@@ -26,36 +27,51 @@ interface PreviousSetData {
 interface EnhancedExerciseCardProps {
   exerciseLog: ExerciseLog;
   exerciseNumber: number;
+  totalExercises?: number;
   templateExercise?: TemplateExercise;
   previousSets?: PreviousSetData[];
+  recentSessions?: { weight: number; reps: number; rpe?: number }[][];
   onAddSet: (data: Omit<SetLog, 'id' | 'created_at'>) => Promise<void>;
   onUpdateSet: (setId: string, updates: Partial<SetLog>) => Promise<void>;
   onDeleteSet: (setId: string) => Promise<void>;
   onDeleteExercise: (exerciseLogId: string) => Promise<void>;
+  onSetLogged?: () => void;
+  hasPR?: boolean;
+  loading?: boolean;
 }
 
 export function EnhancedExerciseCard({
   exerciseLog,
   exerciseNumber,
+  totalExercises,
   templateExercise,
   previousSets = [],
+  recentSessions = [],
   onAddSet,
   onUpdateSet,
   onDeleteSet,
   onDeleteExercise,
+  onSetLogged,
+  hasPR,
+  loading,
 }: EnhancedExerciseCardProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const exercise = exerciseLog.exercise;
   const sets = exerciseLog.set_logs || [];
   
-  // Calculate total volume for this exercise
   const totalVolume = sets.reduce((sum, set) => 
     sum + ((set.weight_kg || 0) * (set.reps || 0)), 0
   );
 
+  // Smart weight suggestion: if last session RPE ≤ 7, suggest +2.5kg
+  const lastSessionTop = previousSets[0];
+  const suggestedWeight = lastSessionTop?.weight_kg && previousSets[0] 
+    ? lastSessionTop.weight_kg + 2.5 
+    : null;
+
   const handleAddSet = async () => {
     const lastSet = sets[sets.length - 1];
-    const prevSet = previousSets[sets.length]; // Get corresponding previous set
+    const prevSet = previousSets[sets.length];
     
     await onAddSet({
       exercise_log_id: exerciseLog.id,
@@ -70,38 +86,60 @@ export function EnhancedExerciseCard({
     });
   };
 
+  // Muscle badge color
+  const muscleName = exercise?.primary_muscle_name?.toLowerCase() || '';
+  const muscleColorClass = muscleName.includes('chest') ? 'badge-chest' :
+    muscleName.includes('back') ? 'badge-back' :
+    muscleName.includes('shoulder') || muscleName.includes('delt') ? 'badge-shoulders' :
+    muscleName.includes('arm') || muscleName.includes('bicep') || muscleName.includes('tricep') ? 'badge-arms' :
+    muscleName.includes('leg') || muscleName.includes('quad') || muscleName.includes('ham') || muscleName.includes('glute') || muscleName.includes('calf') ? 'badge-legs' :
+    muscleName.includes('core') || muscleName.includes('ab') ? 'badge-core' : '';
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-32 mt-2" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
+    <Card className="overflow-hidden border-border/50">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-info/20 text-xs font-bold text-info">
               {exerciseNumber}
             </span>
             <span 
-              className="cursor-pointer hover:text-primary transition-colors"
+              className="cursor-pointer hover:text-info transition-colors"
               onClick={() => setIsCollapsed(!isCollapsed)}
             >
               {exercise?.name || 'Exercise'}
             </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => setIsCollapsed(!isCollapsed)}
-            >
+            {hasPR && <Trophy className="h-4 w-4 text-warning" />}
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsCollapsed(!isCollapsed)}>
               {isCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
             </Button>
           </CardTitle>
           
           <div className="flex items-center gap-2">
             {exercise?.primary_muscle_name && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className={cn('text-xs', muscleColorClass)}>
                 {exercise.primary_muscle_name}
               </Badge>
             )}
             {totalVolume > 0 && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs font-mono">
                 {totalVolume.toLocaleString()} kg
               </Badge>
             )}
@@ -115,7 +153,7 @@ export function EnhancedExerciseCard({
                 <AlertDialogHeader>
                   <AlertDialogTitle>Remove Exercise</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Remove "{exercise?.name}" from this workout? This will delete all sets logged for this exercise.
+                    Remove "{exercise?.name}" from this workout? This will delete all sets.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -132,51 +170,45 @@ export function EnhancedExerciseCard({
           </div>
         </div>
         
-        {/* Previous session reference */}
-        {previousSets.length > 0 && !isCollapsed && (
+        {/* Recent sessions inline */}
+        {!isCollapsed && recentSessions.length > 0 && (
           <p className="text-xs text-muted-foreground mt-1">
-            Last session: {previousSets.map((s, i) => 
-              `${s.weight_kg || 0}×${s.reps || 0}`
-            ).join(', ')}
+            Recent: {recentSessions.slice(0, 3).map((session, i) => 
+              session.map(s => `${s.weight}×${s.reps}${s.rpe ? ` RPE${s.rpe}` : ''}`).join(', ')
+            ).join(' | ')}
           </p>
+        )}
+
+        {/* Smart weight suggestion */}
+        {!isCollapsed && suggestedWeight && suggestedWeight > 0 && (
+          <div className="flex items-center gap-1 mt-1">
+            <Lightbulb className="h-3 w-3 text-warning" />
+            <span className="text-xs text-warning">Try {suggestedWeight}kg</span>
+          </div>
         )}
         
         {exercise?.coaching_cues && !isCollapsed && (
-          <p className="text-xs text-muted-foreground mt-1">
-            💡 {exercise.coaching_cues}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1">💡 {exercise.coaching_cues}</p>
         )}
       </CardHeader>
       
       {!isCollapsed && (
-        <CardContent>
-          {/* Sets Header */}
-          <div className="grid grid-cols-[40px_1fr_1fr_60px_60px_32px] gap-2 text-xs font-medium text-muted-foreground px-2 mb-2">
-            <span>Set</span>
-            <span>Weight (kg)</span>
-            <span>Reps</span>
-            <span className="text-center">Prev</span>
-            <span className="text-center">Vol</span>
-            <span></span>
-          </div>
-          
-          {/* Sets */}
-          <div className="space-y-2">
-            {sets.map((set: SetLog, index: number) => (
-              <QuickSetInput
-                key={set.id}
-                set={set}
-                previousSet={previousSets[index]}
-                onUpdate={(updates) => onUpdateSet(set.id, updates)}
-                onDelete={() => onDeleteSet(set.id)}
-              />
-            ))}
-          </div>
+        <CardContent className="space-y-3">
+          {sets.map((set: SetLog, index: number) => (
+            <QuickSetInput
+              key={set.id}
+              set={set}
+              previousSet={previousSets[index]}
+              onUpdate={(updates) => onUpdateSet(set.id, updates)}
+              onDelete={() => onDeleteSet(set.id)}
+              onLogSet={onSetLogged}
+            />
+          ))}
           
           <Button 
             variant="outline" 
             size="sm" 
-            className="w-full mt-3"
+            className="w-full mt-3 h-12 rounded-xl"
             onClick={handleAddSet}
           >
             <Plus className="h-4 w-4 mr-1" />

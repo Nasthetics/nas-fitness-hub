@@ -573,6 +573,7 @@ export type Database = {
           created_at: string
           exercise_log_id: string
           id: string
+          is_dropset: boolean | null
           is_pr: boolean | null
           notes: string | null
           reps: number | null
@@ -580,12 +581,14 @@ export type Database = {
           rir: number | null
           rpe: number | null
           set_number: number
+          superset_group_id: string | null
           weight_kg: number | null
         }
         Insert: {
           created_at?: string
           exercise_log_id: string
           id?: string
+          is_dropset?: boolean | null
           is_pr?: boolean | null
           notes?: string | null
           reps?: number | null
@@ -593,12 +596,14 @@ export type Database = {
           rir?: number | null
           rpe?: number | null
           set_number: number
+          superset_group_id?: string | null
           weight_kg?: number | null
         }
         Update: {
           created_at?: string
           exercise_log_id?: string
           id?: string
+          is_dropset?: boolean | null
           is_pr?: boolean | null
           notes?: string | null
           reps?: number | null
@@ -606,6 +611,7 @@ export type Database = {
           rir?: number | null
           rpe?: number | null
           set_number?: number
+          superset_group_id?: string | null
           weight_kg?: number | null
         }
         Relationships: [
