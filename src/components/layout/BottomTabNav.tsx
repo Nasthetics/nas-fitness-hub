@@ -46,7 +46,7 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
                   }
                 }}
                 className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px] transition-colors"
-                style={{ color: isActive ? '#00B4FF' : '#666666' }}
+                style={{ color: isActive ? 'hsl(var(--info))' : 'hsl(var(--muted-foreground))' }}
               >
                 <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
                 <span className="text-[10px] font-medium">{tab.label}</span>
