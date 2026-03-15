@@ -103,8 +103,18 @@ export default function Settings() {
               <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Nas" />
             </div>
             <div className="space-y-2">
+              <Label>Current Weight (kg)</Label>
+              <Input type="number" step="0.1" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="95" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label>Height (cm)</Label>
               <Input type="number" value={heightCm} onChange={e => setHeightCm(e.target.value)} placeholder="190" />
+            </div>
+            <div className="space-y-2">
+              <Label>Body Fat %</Label>
+              <Input type="number" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="14" />
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
