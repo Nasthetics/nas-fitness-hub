@@ -24,6 +24,15 @@ interface ExercisePickerProps {
 const MUSCLE_FILTERS = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
 const EQUIPMENT_OPTIONS: EquipmentType[] = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'kettlebell', 'resistance_band', 'other'];
 
+const SUBGROUP_MAP: Record<string, string[]> = {
+  Chest: ['Upper Chest', 'Mid Chest', 'Lower Chest'],
+  Back: ['Upper Back/Traps', 'Lats', 'Mid Back/Rhomboids', 'Lower Back'],
+  Shoulders: ['Front Delt', 'Side Delt', 'Rear Delt'],
+  Legs: ['Quads', 'Hamstrings', 'Glutes', 'Calves'],
+  Arms: ['Biceps', 'Triceps', 'Forearms'],
+  Core: ['Upper Abs', 'Lower Abs', 'Obliques'],
+};
+
 export function ExercisePicker({ 
   open, onOpenChange, onSelect, 
   recentExerciseIds = [], 
