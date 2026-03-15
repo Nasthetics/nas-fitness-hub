@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { OfflineIndicator } from "@/components/pwa/OfflineIndicator";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Workouts from "./pages/Workouts";
