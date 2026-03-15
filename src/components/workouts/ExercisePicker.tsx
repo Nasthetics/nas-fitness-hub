@@ -73,8 +73,11 @@ export function ExercisePicker({
         e.secondary_muscle_name?.toLowerCase().includes(f)
       );
     }
+    if (subgroupFilter) {
+      result = result.filter(e => e.muscle_subgroup === subgroupFilter);
+    }
     return result;
-  }, [exercises, search, muscleFilter, fuse]);
+  }, [exercises, search, muscleFilter, subgroupFilter, fuse]);
 
   const recentExercises = useMemo(() => 
     recentExerciseIds
