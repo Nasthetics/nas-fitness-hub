@@ -117,11 +117,7 @@ export default function Settings() {
               <Input type="number" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="14" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Body Fat %</Label>
-              <Input type="number" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="14" />
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Lean Mass (kg)</Label>
               <Input type="number" value={leanMass} onChange={e => setLeanMass(e.target.value)} placeholder="81.7" />
