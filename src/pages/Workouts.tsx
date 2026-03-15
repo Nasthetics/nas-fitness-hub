@@ -223,13 +223,15 @@ export default function Workouts() {
     try {
       const result = await createWorkoutLog.mutateAsync({ template_id: null, workout_date: dateStr });
       refetchTodayWorkout();
+      setPreWorkoutTheme(theme);
+      setTheme('gym');
       setIsWorkoutMode(true);
       setWorkoutStartTime(Date.now());
       setElapsedSeconds(0);
       setPausedElapsed(0);
       setIsPaused(false);
       setShowExercisePicker(true);
-      toast({ title: 'Quick Workout started! ⚡' });
+      toast({ title: 'Quick Workout started! ⚡ Gym Mode activated' });
     } catch (error) {
       toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }
