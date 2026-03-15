@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
-import { Plus, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
