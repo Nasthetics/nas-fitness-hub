@@ -462,7 +462,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {weeklyWorkouts?.filter(w => w.completed).length || 0}/5
+              {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
             </div>
             <Progress 
               value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 5) * 100} 
