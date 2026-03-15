@@ -119,6 +119,9 @@ export function ExercisePicker({
             {exercise.primary_muscle_name && (
               <Badge variant="outline" className="text-[10px] px-1.5 py-0">{exercise.primary_muscle_name}</Badge>
             )}
+            {exercise.muscle_subgroup && (
+              <Badge variant="secondary" className="text-[9px] px-1 py-0 opacity-75">{exercise.muscle_subgroup}</Badge>
+            )}
             <span className="text-[10px] text-muted-foreground">{exercise.equipment}</span>
           </div>
         </div>
