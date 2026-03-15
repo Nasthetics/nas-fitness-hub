@@ -235,6 +235,11 @@ export default function Exercises() {
                     {exercise.primary_muscle_name}
                   </Badge>
                 )}
+                {exercise.muscle_subgroup && (
+                  <Badge variant="secondary" className="text-[10px] opacity-80">
+                    {exercise.muscle_subgroup}
+                  </Badge>
+                )}
                 {exercise.secondary_muscle_name && (
                   <Badge variant="outline" className="text-xs">
                     {exercise.secondary_muscle_name}
