@@ -3,18 +3,19 @@ import { format, startOfWeek, addDays } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
   Dumbbell, Plus, ChevronLeft, ChevronRight, Check, PlayCircle, Settings,
-  X, Pause, Play, AlertTriangle
+  X, Pause, Play, AlertTriangle, Sun, Moon
 } from 'lucide-react';
 import { useWakeLock } from '@/hooks/use-wake-lock';
-import { useSwipe } from '@/hooks/use-swipe';
 import { PlateCalculator } from '@/components/workouts/PlateCalculator';
 import { RestTimer } from '@/components/workouts/RestTimer';
 import { PRCelebration } from '@/components/workouts/PRCelebration';
 import { WorkoutStatsBar } from '@/components/workouts/WorkoutStatsBar';
 import { ExercisePicker } from '@/components/workouts/ExercisePicker';
+import { ExerciseJumpNav } from '@/components/workouts/ExerciseJumpNav';
+import { POSuggestionsBanner } from '@/components/workouts/POSuggestionsBanner';
+import { getSmartRestSeconds } from '@/lib/smart-rest';
 import { 
   useWorkoutTemplates, useWorkoutLogs, useTodayWorkout, useCreateWorkoutLog,
   useTemplateExercises, useCreateExerciseLog, useCreateSetLog,
@@ -45,8 +46,11 @@ export default function Workouts() {
   const [restTimerSeconds, setRestTimerSeconds] = useState(90);
   const [isPaused, setIsPaused] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [showInactivityDialog, setShowInactivityDialog] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
+  const [pausedElapsed, setPausedElapsed] = useState(0);
+  const [brightMode, setBrightMode] = useState(() => localStorage.getItem('bright-mode') === 'true');
   const [favouriteExerciseIds, setFavouriteExerciseIds] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem('fav-exercises') || '[]'); } catch { return []; }
   });
@@ -58,7 +62,6 @@ export default function Workouts() {
   const inactivityRef = useRef<NodeJS.Timeout | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Screen wake lock — keeps screen on during workout
   useWakeLock(isWorkoutMode && !isPaused);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -87,24 +90,31 @@ export default function Workouts() {
     currentWorkout?.template_id || todayTemplate?.id || null
   );
 
+  // Bright mode toggle
+  const toggleBrightMode = () => {
+    const next = !brightMode;
+    setBrightMode(next);
+    localStorage.setItem('bright-mode', String(next));
+  };
+
   // Elapsed timer
   useEffect(() => {
     if (isWorkoutMode && workoutStartTime && !isPaused) {
       timerRef.current = setInterval(() => {
-        setElapsedSeconds(Math.floor((Date.now() - workoutStartTime) / 1000));
+        setElapsedSeconds(pausedElapsed + Math.floor((Date.now() - workoutStartTime) / 1000));
       }, 1000);
       return () => { if (timerRef.current) clearInterval(timerRef.current); };
     }
-  }, [isWorkoutMode, workoutStartTime, isPaused]);
+  }, [isWorkoutMode, workoutStartTime, isPaused, pausedElapsed]);
 
-  // Auto-pause inactivity
+  // Auto-pause inactivity — 10 min modal
   useEffect(() => {
     if (!isWorkoutMode || isPaused) return;
     const resetInactivity = () => {
       if (inactivityRef.current) clearTimeout(inactivityRef.current);
       inactivityRef.current = setTimeout(() => {
         setIsPaused(true);
-        toast({ title: 'Workout paused', description: '10 minutes of inactivity detected' });
+        setShowInactivityDialog(true);
       }, 10 * 60 * 1000);
     };
     resetInactivity();
@@ -131,6 +141,29 @@ export default function Workouts() {
       });
     });
     return { totalVolume, setsDone, totalSets };
+  }, [currentWorkout]);
+
+  // PO suggestion count
+  const poExerciseCount = useMemo(() => {
+    if (!currentWorkout?.exercise_logs) return 0;
+    return currentWorkout.exercise_logs.filter(el => {
+      const firstSet = el.set_logs?.[0];
+      return firstSet && !firstSet.weight_kg; // exercises with unfilled sets
+    }).length;
+  }, [currentWorkout]);
+
+  const handleApplyAllPO = useCallback(async () => {
+    if (!currentWorkout?.exercise_logs) return;
+    for (const el of currentWorkout.exercise_logs) {
+      for (const set of el.set_logs || []) {
+        if (!set.weight_kg && set.weight_kg !== 0) {
+          // Apply +2.5kg from template or previous
+          await updateSetLog.mutateAsync({ id: set.id, weight_kg: 2.5 });
+        }
+      }
+    }
+    refetchTodayWorkout();
+    toast({ title: 'Applied +2.5kg to all exercises' });
   }, [currentWorkout]);
 
   const weekDays = useMemo(() => {
@@ -168,6 +201,7 @@ export default function Workouts() {
       setIsWorkoutMode(true);
       setWorkoutStartTime(Date.now());
       setElapsedSeconds(0);
+      setPausedElapsed(0);
       setIsPaused(false);
       toast({ title: 'Workout started! 💪' });
     } catch (error) {
@@ -179,12 +213,23 @@ export default function Workouts() {
     setIsWorkoutMode(true);
     setWorkoutStartTime(Date.now());
     setElapsedSeconds(0);
+    setPausedElapsed(0);
     setIsPaused(false);
   };
 
-  const handleExitWorkout = () => {
-    setShowExitDialog(true);
+  const handlePause = () => {
+    setIsPaused(true);
+    setPausedElapsed(elapsedSeconds);
+    setWorkoutStartTime(null);
   };
+
+  const handleResume = () => {
+    setIsPaused(false);
+    setShowInactivityDialog(false);
+    setWorkoutStartTime(Date.now());
+  };
+
+  const handleExitWorkout = () => setShowExitDialog(true);
 
   const confirmExitWorkout = () => {
     setIsWorkoutMode(false);
@@ -209,9 +254,18 @@ export default function Workouts() {
     await createSetLog.mutateAsync(data);
     refetchTodayWorkout();
     if (!(data as any).is_dropset) {
-      setRestTimerSeconds(data.rest_seconds || 90);
+      // Smart rest timer based on exercise type
+      const exerciseLog = currentWorkout?.exercise_logs?.find(el => el.id === data.exercise_log_id);
+      const exerciseName = exerciseLog?.exercise?.name || '';
+      const smartRest = getSmartRestSeconds(exerciseName, data.rpe);
+      setRestTimerSeconds(smartRest);
       setRestTimerActive(true);
     }
+  };
+
+  const handleRestDismiss = (restedSeconds?: number) => {
+    setRestTimerActive(false);
+    // restedSeconds could be displayed on the set row in future
   };
 
   const handleUpdateSet = async (setId: string, updates: Partial<SetLog>) => {
@@ -285,7 +339,6 @@ export default function Workouts() {
   };
 
   const recentExerciseIds = useMemo(() => {
-    // Pull from localStorage for cross-session recency, fallback to current workout
     try {
       const stored = JSON.parse(localStorage.getItem('recent-exercises') || '[]');
       if (stored.length > 0) return stored.slice(0, 10);
@@ -294,7 +347,6 @@ export default function Workouts() {
     return currentWorkout.exercise_logs.map(el => el.exercise_id);
   }, [currentWorkout]);
 
-  // Track recently used exercises in localStorage
   useEffect(() => {
     if (!currentWorkout?.exercise_logs?.length) return;
     const ids = currentWorkout.exercise_logs.map(el => el.exercise_id);
@@ -306,7 +358,6 @@ export default function Workouts() {
   }, [currentWorkout?.exercise_logs]);
 
   const hasTemplates = templates && templates.length > 0;
-  const exerciseCount = currentWorkout?.exercise_logs?.length || 0;
 
   // ===================== FULLSCREEN WORKOUT MODE =====================
   if (isWorkoutMode && currentWorkout) {
@@ -317,25 +368,19 @@ export default function Workouts() {
     const secs = elapsedSeconds % 60;
     const timeStr = `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
 
-    const clampedIndex = Math.min(currentExerciseIndex, exerciseLogs.length - 1);
+    const clampedIndex = Math.min(currentExerciseIndex, Math.max(0, exerciseLogs.length - 1));
     const currentEx = exerciseLogs[clampedIndex];
 
     const goNext = () => {
       if (clampedIndex < exerciseLogs.length - 1) {
         setCurrentExerciseIndex(clampedIndex + 1);
-        if (showSwipeHint) {
-          setShowSwipeHint(false);
-          localStorage.setItem('swipe-hint-shown', 'true');
-        }
+        if (showSwipeHint) { setShowSwipeHint(false); localStorage.setItem('swipe-hint-shown', 'true'); }
       }
     };
     const goPrev = () => {
       if (clampedIndex > 0) {
         setCurrentExerciseIndex(clampedIndex - 1);
-        if (showSwipeHint) {
-          setShowSwipeHint(false);
-          localStorage.setItem('swipe-hint-shown', 'true');
-        }
+        if (showSwipeHint) { setShowSwipeHint(false); localStorage.setItem('swipe-hint-shown', 'true'); }
       }
     };
 
@@ -351,34 +396,57 @@ export default function Workouts() {
       },
     };
 
+    // Bright mode class
+    const brightModeClass = brightMode ? 'bg-white text-black' : 'bg-background';
+
     return (
-      <div className="flex flex-col min-h-screen bg-background">
+      <div className={cn('flex flex-col min-h-screen', brightModeClass)}>
         {/* Paused overlay */}
-        {isPaused && (
+        {isPaused && !showInactivityDialog && (
           <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur flex flex-col items-center justify-center gap-6">
             <Pause className="h-16 w-16 text-muted-foreground" />
             <h2 className="text-3xl font-bold text-foreground">PAUSED</h2>
             <p className="text-sm text-muted-foreground">Screen wake lock paused</p>
-            <Button size="lg" onClick={() => setIsPaused(false)} className="gap-2 h-14 px-8 text-lg rounded-xl bg-info hover:bg-info/90 text-info-foreground">
+            <Button size="lg" onClick={handleResume} className="gap-2 h-14 px-8 text-lg rounded-xl bg-info hover:bg-info/90 text-info-foreground">
               <Play className="h-5 w-5" /> Resume
             </Button>
           </div>
         )}
 
+        {/* Inactivity dialog */}
+        <AlertDialog open={showInactivityDialog} onOpenChange={setShowInactivityDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Still there?</AlertDialogTitle>
+              <AlertDialogDescription>Your workout has been paused due to 10 minutes of inactivity.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={handleResume}>Resume Workout</AlertDialogCancel>
+              <AlertDialogAction onClick={() => { setShowInactivityDialog(false); handleCompleteWorkout(); }}>
+                Finish Workout
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-background border-b border-border px-4 py-3">
+        <div className={cn('sticky top-0 z-30 border-b border-border px-4 py-3', brightMode ? 'bg-white' : 'bg-background')}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExitWorkout}>
                 <X className="h-5 w-5" />
               </Button>
               <div>
-                <p className="text-sm font-bold text-foreground">{workoutName}</p>
+                <p className={cn('text-sm font-bold', brightMode ? 'text-black' : 'text-foreground')}>{workoutName}</p>
                 <p className="text-xs text-muted-foreground font-mono">{timeStr}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsPaused(true)}>
+              {/* Bright mode toggle */}
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleBrightMode}>
+                {brightMode ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </Button>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePause}>
                 <Pause className="h-4 w-4" />
               </Button>
               <Badge variant="secondary" className="font-mono text-xs">
@@ -397,7 +465,10 @@ export default function Workouts() {
                 <button
                   key={i}
                   onClick={() => setCurrentExerciseIndex(i)}
-                  className={`h-1.5 flex-1 rounded-full transition-colors ${i === clampedIndex ? 'bg-info' : i < clampedIndex ? 'bg-info/40' : 'bg-muted'}`}
+                  className={cn(
+                    'h-1.5 flex-1 rounded-full transition-colors',
+                    i === clampedIndex ? 'bg-info' : i < clampedIndex ? 'bg-info/40' : 'bg-muted'
+                  )}
                 />
               ))}
             </div>
@@ -412,12 +483,22 @@ export default function Workouts() {
           elapsedSeconds={elapsedSeconds}
         />
 
+        {/* PO Suggestions Banner */}
+        <POSuggestionsBanner exerciseCount={poExerciseCount} onApplyAll={handleApplyAllPO} />
+
         {/* Swipe hint */}
         {showSwipeHint && exerciseLogs.length > 1 && (
           <div className="text-center py-2 text-xs text-muted-foreground animate-pulse">
             ← Swipe to navigate exercises →
           </div>
         )}
+
+        {/* Right-edge jump navigation */}
+        <ExerciseJumpNav
+          exerciseLogs={exerciseLogs}
+          currentIndex={clampedIndex}
+          onJump={setCurrentExerciseIndex}
+        />
 
         {/* Current exercise card with swipe */}
         <div className="flex-1 p-4 space-y-4 overflow-y-auto" {...swipeHandlers}>
@@ -426,7 +507,9 @@ export default function Workouts() {
             <Button variant="ghost" size="icon" className="h-10 w-10" onClick={goPrev} disabled={clampedIndex === 0}>
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <span className="text-sm font-medium text-foreground">{currentEx?.exercise?.name || 'Exercise'}</span>
+            <span className={cn('text-sm font-medium', brightMode ? 'text-black' : 'text-foreground')}>
+              {currentEx?.exercise?.name || 'Exercise'}
+            </span>
             <Button variant="ghost" size="icon" className="h-10 w-10" onClick={goNext} disabled={clampedIndex >= exerciseLogs.length - 1}>
               <ChevronRight className="h-5 w-5" />
             </Button>
@@ -450,7 +533,6 @@ export default function Workouts() {
             />
           )}
 
-          {/* Add exercise button */}
           <Button 
             variant="outline" 
             className="w-full h-14 rounded-xl border-dashed"
@@ -459,7 +541,6 @@ export default function Workouts() {
             <Plus className="h-5 w-5 mr-2" /> Add Exercise
           </Button>
 
-          {/* Finish workout */}
           {clampedIndex >= exerciseLogs.length - 1 && (
             <Button 
               onClick={handleCompleteWorkout}
@@ -499,7 +580,7 @@ export default function Workouts() {
           onToggleFavourite={toggleFavourite}
         />
 
-        <RestTimer defaultSeconds={restTimerSeconds} isActive={restTimerActive} onDismiss={() => setRestTimerActive(false)} />
+        <RestTimer defaultSeconds={restTimerSeconds} isActive={restTimerActive} onDismiss={handleRestDismiss} />
         <PRCelebration show={prCelebration.show} exerciseName={prCelebration.exerciseName}
           oldRecord={prCelebration.oldRecord} newRecord={prCelebration.newRecord}
           onClose={() => setPrCelebration(prev => ({ ...prev, show: false }))} />
@@ -510,7 +591,6 @@ export default function Workouts() {
   // ===================== NORMAL VIEW =====================
   return (
     <div className="space-y-6 animate-in">
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold">Workouts</h1>
@@ -525,7 +605,6 @@ export default function Workouts() {
         </div>
       </div>
 
-      {/* Week Selector */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-4">
@@ -568,7 +647,6 @@ export default function Workouts() {
         </CardContent>
       </Card>
 
-      {/* Workout Content */}
       {todayTemplate?.day_type === 'rest' ? (
         <Card className="border-muted">
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -658,7 +736,7 @@ export default function Workouts() {
       <ExercisePicker open={showExercisePicker} onOpenChange={setShowExercisePicker}
         onSelect={handleAddExerciseFromPicker} recentExerciseIds={recentExerciseIds}
         favouriteExerciseIds={favouriteExerciseIds} onToggleFavourite={toggleFavourite} />
-      <RestTimer defaultSeconds={restTimerSeconds} isActive={restTimerActive} onDismiss={() => setRestTimerActive(false)} />
+      <RestTimer defaultSeconds={restTimerSeconds} isActive={restTimerActive} onDismiss={handleRestDismiss} />
       <PRCelebration show={prCelebration.show} exerciseName={prCelebration.exerciseName}
         oldRecord={prCelebration.oldRecord} newRecord={prCelebration.newRecord}
         onClose={() => setPrCelebration(prev => ({ ...prev, show: false }))} />

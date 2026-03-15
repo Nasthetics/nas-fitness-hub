@@ -1,13 +1,15 @@
 import { useState, useMemo } from 'react';
+import Fuse from 'fuse.js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Star, Clock, Dumbbell } from 'lucide-react';
+import { Search, Star, Clock, Dumbbell, Plus } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useExerciseLibrary } from '@/hooks/use-fitness-data';
 import { cn } from '@/lib/utils';
-import type { Exercise } from '@/lib/types';
+import type { Exercise, EquipmentType } from '@/lib/types';
 
 interface ExercisePickerProps {
   open: boolean;
@@ -16,26 +18,44 @@ interface ExercisePickerProps {
   recentExerciseIds?: string[];
   favouriteExerciseIds?: string[];
   onToggleFavourite?: (exerciseId: string) => void;
+  onCreateExercise?: (name: string, muscleGroup: string, equipment: EquipmentType) => Promise<void>;
 }
 
 const MUSCLE_FILTERS = ['All', 'Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'];
+const EQUIPMENT_OPTIONS: EquipmentType[] = ['barbell', 'dumbbell', 'cable', 'machine', 'bodyweight', 'kettlebell', 'resistance_band', 'other'];
 
 export function ExercisePicker({ 
   open, onOpenChange, onSelect, 
   recentExerciseIds = [], 
   favouriteExerciseIds = [],
-  onToggleFavourite 
+  onToggleFavourite,
+  onCreateExercise,
 }: ExercisePickerProps) {
   const { data: exercises = [] } = useExerciseLibrary();
   const [search, setSearch] = useState('');
   const [muscleFilter, setMuscleFilter] = useState('All');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newMuscle, setNewMuscle] = useState('Chest');
+  const [newEquipment, setNewEquipment] = useState<EquipmentType>('barbell');
+
+  // Fuse.js instance
+  const fuse = useMemo(() => new Fuse(exercises, {
+    keys: ['name', 'primary_muscle_name', 'equipment'],
+    threshold: 0.4,
+    includeMatches: true,
+    includeScore: true,
+  }), [exercises]);
 
   const filteredExercises = useMemo(() => {
-    let result = exercises;
+    let result: Exercise[];
+    
     if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(e => e.name.toLowerCase().includes(q));
+      const fuseResults = fuse.search(search);
+      result = fuseResults.map(r => r.item);
+    } else {
+      result = exercises;
     }
+
     if (muscleFilter !== 'All') {
       const f = muscleFilter.toLowerCase();
       result = result.filter(e => 
@@ -44,7 +64,7 @@ export function ExercisePicker({
       );
     }
     return result;
-  }, [exercises, search, muscleFilter]);
+  }, [exercises, search, muscleFilter, fuse]);
 
   const recentExercises = useMemo(() => 
     recentExerciseIds
@@ -58,6 +78,14 @@ export function ExercisePicker({
     exercises.filter(e => favouriteExerciseIds.includes(e.id)),
     [favouriteExerciseIds, exercises]
   );
+
+  const handleCreate = async () => {
+    if (!onCreateExercise || !search.trim()) return;
+    await onCreateExercise(search.trim(), newMuscle, newEquipment);
+    setShowCreateForm(false);
+    setSearch('');
+    onOpenChange(false);
+  };
 
   const renderExerciseCard = (exercise: Exercise) => {
     const isFav = favouriteExerciseIds.includes(exercise.id);
@@ -136,7 +164,7 @@ export function ExercisePicker({
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search exercises..."
+                placeholder="Search exercises... (fuzzy: 'bch prs' → Bench Press)"
                 className="pl-9"
               />
             </div>
@@ -161,7 +189,51 @@ export function ExercisePicker({
 
             <div className="space-y-2">
               {filteredExercises.map(renderExerciseCard)}
-              {filteredExercises.length === 0 && (
+              
+              {/* Inline create when no results */}
+              {filteredExercises.length === 0 && search.trim() && (
+                <div className="space-y-3 py-4">
+                  <p className="text-center text-muted-foreground text-sm">No exercises found</p>
+                  {!showCreateForm ? (
+                    <Button
+                      variant="outline"
+                      className="w-full h-12 rounded-xl border-dashed gap-2"
+                      onClick={() => setShowCreateForm(true)}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create &quot;{search.trim()}&quot; as new exercise
+                    </Button>
+                  ) : (
+                    <div className="space-y-3 p-4 rounded-xl border border-border bg-card">
+                      <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Exercise name" />
+                      <Select value={newMuscle} onValueChange={setNewMuscle}>
+                        <SelectTrigger><SelectValue placeholder="Muscle Group" /></SelectTrigger>
+                        <SelectContent>
+                          {MUSCLE_FILTERS.filter(m => m !== 'All').map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={newEquipment} onValueChange={(v) => setNewEquipment(v as EquipmentType)}>
+                        <SelectTrigger><SelectValue placeholder="Equipment" /></SelectTrigger>
+                        <SelectContent>
+                          {EQUIPMENT_OPTIONS.map(e => (
+                            <SelectItem key={e} value={e}>{e.replace('_', ' ')}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="flex-1" onClick={() => setShowCreateForm(false)}>Cancel</Button>
+                        <Button className="flex-1 bg-info hover:bg-info/90 text-info-foreground" onClick={handleCreate}>
+                          Create & Add
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {filteredExercises.length === 0 && !search.trim() && (
                 <p className="text-center text-muted-foreground py-8 text-sm">No exercises found</p>
               )}
             </div>
@@ -178,7 +250,7 @@ function highlightMatch(text: string, query: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <span className="text-info font-semibold">{text.slice(idx, idx + query.length)}</span>
+      <span className="bg-warning/30 text-warning font-semibold">{text.slice(idx, idx + query.length)}</span>
       {text.slice(idx + query.length)}
     </>
   );
