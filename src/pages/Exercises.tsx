@@ -96,9 +96,9 @@ export default function Exercises() {
 
       {/* Anatomy Diagram */}
       {showAnatomy && (
-        <Card className="border-border/50 bg-card/50 backdrop-blur">
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+        <Card className="border-border/50 bg-card/50 backdrop-blur overflow-visible">
+          <CardContent className="pt-6 overflow-visible">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-6 overflow-visible">
               <BodyDiagram
                 selectedMuscle={muscleFilter !== 'all' ? muscleFilter : null}
                 onMuscleClick={handleAnatomyClick}

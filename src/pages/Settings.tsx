@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Droplets, User } from 'lucide-react';
+import { Settings as SettingsIcon, Moon, Sun, Droplets, User, Bot, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,11 +46,14 @@ export default function Settings() {
   const [trainingP, setTrainingP] = useState('');
   const [trainingC, setTrainingC] = useState('');
   const [trainingF, setTrainingF] = useState('');
+  const [currentWeight, setCurrentWeight] = useState('');
   const [ramadanMode, setRamadanMode] = useState(false);
+  const [claudeApiKey, setClaudeApiKey] = useState(() => localStorage.getItem('claude_api_key') || '');
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
+      setCurrentWeight('95');
       setHeightCm(profile.height_cm?.toString() || '');
       setBodyFat(profile.body_fat_percent?.toString() || '');
       setLeanMass(profile.lean_mass_kg?.toString() || '');
@@ -100,15 +103,21 @@ export default function Settings() {
               <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Nas" />
             </div>
             <div className="space-y-2">
+              <Label>Current Weight (kg)</Label>
+              <Input type="number" step="0.1" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="95" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label>Height (cm)</Label>
               <Input type="number" value={heightCm} onChange={e => setHeightCm(e.target.value)} placeholder="190" />
             </div>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Body Fat %</Label>
               <Input type="number" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="14" />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Lean Mass (kg)</Label>
               <Input type="number" value={leanMass} onChange={e => setLeanMass(e.target.value)} placeholder="81.7" />
@@ -219,6 +228,49 @@ export default function Settings() {
             </div>
           </CardContent>
         )}
+      </Card>
+
+      {/* AI Coach API Key */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI Coach</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Claude API Key</Label>
+            <Input
+              type="password"
+              value={claudeApiKey}
+              onChange={e => setClaudeApiKey(e.target.value)}
+              placeholder="sk-ant-..."
+            />
+            <p className="text-xs text-muted-foreground">Get your key from console.anthropic.com</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {claudeApiKey ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-green-500 font-medium">Connected</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Not configured</span>
+              </>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              localStorage.setItem('claude_api_key', claudeApiKey);
+              toast({ title: 'API key saved! ✅' });
+            }}
+            disabled={!claudeApiKey}
+            size="sm"
+          >
+            Save API Key
+          </Button>
+        </CardContent>
       </Card>
 
       <Button onClick={handleSave} disabled={updateProfile.isPending} className="w-full" size="lg">

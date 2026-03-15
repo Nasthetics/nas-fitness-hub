@@ -48,8 +48,8 @@ export function BodyDiagram({
 
   const sizeClasses = {
     sm: 'w-32 h-48',
-    md: 'w-48 h-72',
-    lg: 'w-64 h-96',
+    md: 'w-full max-w-[12rem] h-auto',
+    lg: 'w-full max-w-[16rem] h-auto',
   };
 
   const muscles = view === 'front' ? FRONT_MUSCLES : BACK_MUSCLES;

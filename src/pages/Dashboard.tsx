@@ -197,9 +197,9 @@ export default function Dashboard() {
 
       {/* Recovery Score + Today's Workout */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card className={recoveryBg}>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
               <Heart className={`h-8 w-8 ${recoveryColor}`} />
             </div>
             <div className="flex-1">
@@ -247,20 +247,29 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Quick Actions - FIXED with labels and larger icons */}
+      {/* Quick Actions - Large visible cards */}
       <div className="grid grid-cols-3 gap-3">
-        <Button variant="outline" className="h-auto py-5 flex flex-col gap-2 border-blue-500/20 hover:bg-blue-500/5" onClick={() => navigate('/workouts')}>
-          <Dumbbell className="h-8 w-8 text-blue-500" />
-          <span className="text-xs font-medium">Log Workout</span>
-        </Button>
-        <Button variant="outline" className="h-auto py-5 flex flex-col gap-2 border-green-500/20 hover:bg-green-500/5" onClick={() => navigate('/nutrition')}>
-          <Apple className="h-8 w-8 text-green-500" />
-          <span className="text-xs font-medium">Add Meal</span>
-        </Button>
-        <Button variant="outline" className="h-auto py-5 flex flex-col gap-2 border-orange-500/20 hover:bg-orange-500/5" onClick={() => navigate('/progress')}>
-          <Scale className="h-8 w-8 text-orange-500" />
-          <span className="text-xs font-medium">Log Weight</span>
-        </Button>
+        <button
+          onClick={() => navigate('/workouts')}
+          className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card border-2 border-[hsl(199,89%,48%)] p-4 min-w-[80px] min-h-[72px] transition-colors hover:bg-[hsl(199,89%,48%,0.08)]"
+        >
+          <Dumbbell className="h-7 w-7 text-[hsl(199,89%,48%)]" />
+          <span className="text-xs font-semibold text-foreground">Log Workout</span>
+        </button>
+        <button
+          onClick={() => navigate('/nutrition')}
+          className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card border-2 border-[hsl(142,76%,48%)] p-4 min-w-[80px] min-h-[72px] transition-colors hover:bg-[hsl(142,76%,48%,0.08)]"
+        >
+          <Apple className="h-7 w-7 text-[hsl(142,76%,48%)]" />
+          <span className="text-xs font-semibold text-foreground">Add Meal</span>
+        </button>
+        <button
+          onClick={() => navigate('/progress')}
+          className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card border-2 border-[hsl(25,100%,56%)] p-4 min-w-[80px] min-h-[72px] transition-colors hover:bg-[hsl(25,100%,56%,0.08)]"
+        >
+          <Scale className="h-7 w-7 text-[hsl(25,100%,56%)]" />
+          <span className="text-xs font-semibold text-foreground">Log Weight</span>
+        </button>
       </div>
 
       {/* Daily Brief — 2x2 grid */}
