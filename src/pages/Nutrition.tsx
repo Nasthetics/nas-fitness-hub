@@ -70,10 +70,10 @@ export default function Nutrition() {
         fats: profile?.training_day_fats || 91,
       }
     : {
-        calories: profile?.rest_day_calories || 2200,
-        protein: profile?.rest_day_protein || 180,
-        carbs: profile?.rest_day_carbs || 200,
-        fats: profile?.rest_day_fats || 70,
+        calories: profile?.rest_day_calories || 2100,
+        protein: profile?.rest_day_protein || 200,
+        carbs: profile?.rest_day_carbs || 150,
+        fats: profile?.rest_day_fats || 75,
       };
 
   const handleCreateMeal = async (mealName?: string) => {
