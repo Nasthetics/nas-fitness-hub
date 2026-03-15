@@ -33,6 +33,7 @@ import { TemplateLibrary, SaveAsTemplateDialog } from '@/components/workouts/Tem
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWorkoutMode } from '@/components/layout/AppLayout';
+import { useTheme } from '@/hooks/use-theme';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
