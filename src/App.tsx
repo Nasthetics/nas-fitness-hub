@@ -33,7 +33,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <OfflineIndicator />
-        <InstallPrompt />
+        
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
