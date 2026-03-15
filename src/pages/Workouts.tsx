@@ -262,8 +262,39 @@ export default function Workouts() {
       setIsWorkoutMode(false);
       setWorkoutStartTime(null);
       toast({ title: 'Workout completed! 💪' });
+      // Offer to save as template if it was a quick workout
+      if (!currentWorkout.template_id && currentWorkout.exercise_logs?.length) {
+        setShowSaveTemplate(true);
+      }
     } catch (error) {
       toast({ title: 'Error completing workout', description: (error as Error).message, variant: 'destructive' });
+    }
+  };
+
+  const handleStartFromTemplate = async (template: any) => {
+    try {
+      const result = await createWorkoutLog.mutateAsync({ template_id: template.id, workout_date: dateStr });
+      // Fetch template exercises and create exercise logs
+      const { data: texs } = await supabase.from('template_exercises')
+        .select('exercise_id, exercise_order')
+        .eq('template_id', template.id)
+        .order('exercise_order');
+      if (texs) {
+        for (const te of texs) {
+          await createExerciseLog.mutateAsync({
+            workout_log_id: result.id, exercise_id: te.exercise_id, exercise_order: te.exercise_order,
+          });
+        }
+      }
+      refetchTodayWorkout();
+      setIsWorkoutMode(true);
+      setWorkoutStartTime(Date.now());
+      setElapsedSeconds(0);
+      setPausedElapsed(0);
+      setIsPaused(false);
+      toast({ title: `${template.name} started! 💪` });
+    } catch (error) {
+      toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }
   };
 
