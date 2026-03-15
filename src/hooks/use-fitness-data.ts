@@ -59,6 +59,7 @@ export function useExerciseLibrary() {
         substitutions: e.substitutions,
         coaching_cues: e.coaching_cues,
         image_url: e.image_url,
+        muscle_subgroup: (e as any).muscle_subgroup || null,
         created_at: e.created_at,
         primary_muscle_name: e.primary?.name,
         secondary_muscle_name: e.secondary?.name,
