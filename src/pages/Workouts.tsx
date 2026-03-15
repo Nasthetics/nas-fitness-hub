@@ -304,12 +304,14 @@ export default function Workouts() {
         }
       }
       refetchTodayWorkout();
+      setPreWorkoutTheme(theme);
+      setTheme('gym');
       setIsWorkoutMode(true);
       setWorkoutStartTime(Date.now());
       setElapsedSeconds(0);
       setPausedElapsed(0);
       setIsPaused(false);
-      toast({ title: `${template.name} started! 💪` });
+      toast({ title: `${template.name} started! 💪 Gym Mode activated` });
     } catch (error) {
       toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
     }
