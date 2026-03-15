@@ -508,8 +508,8 @@ export default function Workouts() {
         </AlertDialog>
 
         {/* Top bar */}
-        <div className={cn('sticky top-0 z-30 border-b border-border px-4 py-3', brightMode ? 'bg-white' : 'bg-background')}>
-          <div className="flex items-center justify-between">
+        <div className={cn('sticky top-0 z-30 border-b border-border px-3 py-3 w-full', brightMode ? 'bg-white' : 'bg-background')}>
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleExitWorkout}>
                 <X className="h-5 w-5" />
