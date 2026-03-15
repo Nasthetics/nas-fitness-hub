@@ -90,6 +90,7 @@ export default function Progress() {
   
   const [uploading, setUploading] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isLogMetricsSheetOpen, setIsLogMetricsSheetOpen] = useState(false);
 
   // Calculate trends
   const latestMetric = metrics[0];
