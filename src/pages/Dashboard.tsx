@@ -465,7 +465,7 @@ export default function Dashboard() {
               {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
             </div>
             <Progress 
-              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / 5) * 100} 
+              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / weeklyWorkoutTarget) * 100} 
               className="h-2 mt-2" 
             />
             <p className="text-sm text-muted-foreground mt-1">workouts this week</p>
