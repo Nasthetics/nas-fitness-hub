@@ -64,11 +64,6 @@ export function useExerciseLibrary() {
         primary_muscle_name: e.primary?.name,
         secondary_muscle_name: e.secondary?.name,
       })) as Exercise[];
-      return data.map(e => ({
-        ...e,
-        primary_muscle_name: e.primary?.name,
-        secondary_muscle_name: e.secondary?.name,
-      })) as Exercise[];
     },
   });
 }
