@@ -271,6 +271,7 @@ export default function Workouts() {
     try {
       await updateWorkoutLog.mutateAsync({ id: currentWorkout.id, completed: true });
       setIsWorkoutMode(false);
+      if (preWorkoutTheme) setTheme(preWorkoutTheme as any);
       setWorkoutStartTime(null);
       setShowSummary(true);
     } catch (error) {
