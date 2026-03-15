@@ -708,6 +708,9 @@ export default function Workouts() {
         </div>
       </Button>
 
+      {/* Template Library */}
+      <TemplateLibrary onStartFromTemplate={handleStartFromTemplate} />
+
       {todayTemplate?.day_type === 'rest' ? (
         <Card className="border-muted">
           <CardContent className="flex flex-col items-center justify-center py-12">
