@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, ChevronDown, ChevronUp, Trophy, Lightbulb, BarChart3 } from 'lucide-react';
 import { QuickSetInput } from './QuickSetInput';
 import { ExerciseHistorySheet } from './ExerciseHistorySheet';
+import { ExerciseImage } from '@/components/exercises/ExerciseImage';
 import { cn } from '@/lib/utils';
 import type { SetLog, ExerciseLog, TemplateExercise } from '@/lib/types';
 import { useState } from 'react';
