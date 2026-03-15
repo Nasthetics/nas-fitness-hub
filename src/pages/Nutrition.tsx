@@ -366,79 +366,18 @@ export default function Nutrition() {
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>{Math.round(mealTotals.calories)} kcal</span>
                       <span>{Math.round(mealTotals.protein)}g protein</span>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              setAddingToMealId(meal.id);
-                              setSelectedFood(null);
-                              setFoodSearchQuery('');
-                            }}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Food
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-lg">
-                          <DialogHeader>
-                            <DialogTitle>Add Food to {meal.meal_name}</DialogTitle>
-                          </DialogHeader>
-                          <div className="py-4">
-                            {!selectedFood ? (
-                              <FoodCategoryTabs
-                                foods={foods}
-                                searchQuery={foodSearchQuery}
-                                onSearchChange={setFoodSearchQuery}
-                                onSelectFood={setSelectedFood}
-                              />
-                            ) : (
-                              <div className="space-y-4">
-                                <div className="p-4 bg-accent/50 rounded-lg">
-                                  <div className="font-medium">{selectedFood.name}</div>
-                                  <div className="text-sm text-muted-foreground mt-1">
-                                    {selectedFood.calories_per_100g} kcal per 100g
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Quantity (grams)</Label>
-                                  <Input
-                                    type="number"
-                                    value={quantity}
-                                    onChange={(e) => setQuantity(e.target.value)}
-                                    min="1"
-                                  />
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  = {Math.round(selectedFood.calories_per_100g * parseFloat(quantity || '0') / 100)} kcal, {' '}
-                                  {Math.round(selectedFood.protein_per_100g * parseFloat(quantity || '0') / 100 * 10) / 10}g protein
-                                </div>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => setSelectedFood(null)}
-                                >
-                                  ← Choose different food
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <DialogClose asChild>
-                              <Button 
-                                onClick={handleAddFood} 
-                                disabled={!selectedFood || !quantity}
-                              >
-                                Add Food
-                              </Button>
-                            </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setAddingToMealId(meal.id);
+                          setSelectedFood(null);
+                          setFoodSearchQuery('');
+                        }}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Food
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
