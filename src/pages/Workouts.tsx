@@ -415,6 +415,17 @@ export default function Workouts() {
 
   const hasTemplates = templates && templates.length > 0;
 
+  // ===================== WORKOUT SUMMARY SCREEN =====================
+  if (showSummary && currentWorkout) {
+    return (
+      <WorkoutSummary
+        workout={currentWorkout}
+        elapsedSeconds={elapsedSeconds}
+        onContinue={handleSummaryDone}
+      />
+    );
+  }
+
   // ===================== FULLSCREEN WORKOUT MODE =====================
   if (isWorkoutMode && currentWorkout) {
     const exerciseLogs = currentWorkout.exercise_logs || [];
