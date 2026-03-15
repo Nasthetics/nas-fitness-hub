@@ -64,10 +64,10 @@ export default function Nutrition() {
   // Get targets based on training/rest day
   const targets = isActualTrainingDay 
     ? { 
-        calories: profile?.training_day_calories || 2800,
-        protein: profile?.training_day_protein || 200,
-        carbs: profile?.training_day_carbs || 300,
-        fats: profile?.training_day_fats || 80,
+        calories: profile?.training_day_calories || 2556,
+        protein: profile?.training_day_protein || 246,
+        carbs: profile?.training_day_carbs || 189,
+        fats: profile?.training_day_fats || 91,
       }
     : {
         calories: profile?.rest_day_calories || 2200,
