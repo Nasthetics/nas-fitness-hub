@@ -43,6 +43,7 @@ export function ExercisePicker({
   const { data: exercises = [] } = useExerciseLibrary();
   const [search, setSearch] = useState('');
   const [muscleFilter, setMuscleFilter] = useState('All');
+  const [subgroupFilter, setSubgroupFilter] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newMuscle, setNewMuscle] = useState('Chest');
   const [newEquipment, setNewEquipment] = useState<EquipmentType>('barbell');
