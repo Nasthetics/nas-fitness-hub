@@ -1,12 +1,15 @@
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { 
-  BookOpen, Pill, Heart, Calendar, Bot, FileText, Settings, LogOut 
+  BookOpen, Pill, Heart, Calendar, Bot, FileText, Settings, LogOut,
+  Activity, ShoppingCart
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const moreItems = [
+  { label: 'Cardio', icon: Activity, path: '/cardio' },
+  { label: 'Groceries', icon: ShoppingCart, path: '/groceries' },
   { label: 'Exercises', icon: BookOpen, path: '/exercises' },
   { label: 'Supplements', icon: Pill, path: '/supplements' },
   { label: 'Recovery', icon: Heart, path: '/recovery' },

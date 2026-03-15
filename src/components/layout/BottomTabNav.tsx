@@ -26,9 +26,8 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-[#141414]/95 bg-[#141414]"
+        className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-card/95 bg-card border-t border-border"
         style={{
-          borderTop: '1px solid #2A2A2A',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
       >
