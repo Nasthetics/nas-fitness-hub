@@ -153,8 +153,8 @@ export default function Dashboard() {
     return untaken[0] || null;
   }, [activeSupps, supplementLogs]);
 
-  // Progress ring helper
-  const Ring = ({ value, max, size = 80, color, label }: { value: number; max: number; size?: number; color: string; label: string }) => {
+  // Progress ring helper with edit
+  const Ring = ({ value, max, size = 80, color, label, onEdit }: { value: number; max: number; size?: number; color: string; label: string; onEdit?: () => void }) => {
     const sw = 6;
     const r = (size - sw) / 2;
     const c = r * 2 * Math.PI;
@@ -172,6 +172,14 @@ export default function Dashboard() {
           </div>
         </div>
         <span className="text-xs text-muted-foreground">{label}</span>
+        {!isTrainingDay && label === 'Calories' && (
+          <Badge variant="outline" className="text-[8px] px-1 py-0">Rest Day</Badge>
+        )}
+        {onEdit && (
+          <button onClick={onEdit} className="text-muted-foreground hover:text-primary transition-colors">
+            <Pencil className="h-3 w-3" />
+          </button>
+        )}
       </div>
     );
   };
@@ -191,14 +199,27 @@ export default function Dashboard() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-around flex-wrap gap-4">
-            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" />
-            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" />
-            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" />
+            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" onEdit={() => setEditTarget({ label: 'Calories', unit: 'kcal', value: targetCalories, field: isTrainingDay ? 'training_day_calories' : 'rest_day_calories', step: 50 })} />
+            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" onEdit={() => setEditTarget({ label: 'Protein', unit: 'grams', value: targetProtein, field: isTrainingDay ? 'training_day_protein' : 'rest_day_protein', step: 5 })} />
+            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" onEdit={() => setEditTarget({ label: 'Water', unit: 'ml', value: waterTarget, field: 'water_target_ml', step: 250 })} />
             <Ring value={takenCount} max={activeSupps.length || 1} color="#a855f7" label="Supps" />
             <Ring value={workoutDone ? 1 : 0} max={1} color="#22c55e" label="Workout" />
           </div>
         </CardContent>
       </Card>
+
+      {/* Target Edit Modal */}
+      {editTarget && (
+        <TargetEditModal
+          open={!!editTarget}
+          onOpenChange={(open) => !open && setEditTarget(null)}
+          label={editTarget.label}
+          unit={editTarget.unit}
+          currentValue={editTarget.value}
+          fieldName={editTarget.field}
+          step={editTarget.step}
+        />
+      )}
 
       {/* Recovery Score + Today's Workout */}
       <div className="grid md:grid-cols-2 gap-4">
