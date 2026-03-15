@@ -88,6 +88,37 @@ export function useFoodDatabase() {
 }
 
 // ============ PROFILE ============
+const CORRECT_DEFAULTS = {
+  training_day_calories: 2556,
+  training_day_protein: 246,
+  training_day_carbs: 189,
+  training_day_fats: 91,
+  water_target_ml: 4000,
+};
+
+async function migrateStaleProfile(profile: Profile, userId: string) {
+  const needsFix =
+    profile.training_day_calories === 2800 ||
+    profile.training_day_protein === 200 ||
+    profile.display_name === 'Anas' ||
+    (!profile.display_name);
+
+  if (!needsFix) return profile;
+
+  const updates: Record<string, any> = {};
+  if (profile.training_day_calories === 2800) updates.training_day_calories = 2556;
+  if (profile.training_day_protein === 200) updates.training_day_protein = 246;
+  if (profile.training_day_carbs === 300) updates.training_day_carbs = 189;
+  if (profile.training_day_fats === 80) updates.training_day_fats = 91;
+  if (profile.display_name === 'Anas' || !profile.display_name) updates.display_name = 'Nas';
+
+  if (Object.keys(updates).length > 0) {
+    await supabase.from('profiles').update(updates).eq('user_id', userId);
+    return { ...profile, ...updates };
+  }
+  return profile;
+}
+
 export function useProfile() {
   const { user } = useAuth();
   return useQuery({
@@ -100,7 +131,9 @@ export function useProfile() {
         .eq('user_id', user.id)
         .maybeSingle();
       if (error) throw error;
-      return data as Profile | null;
+      if (!data) return null;
+      const migrated = await migrateStaleProfile(data as Profile, user.id);
+      return migrated as Profile | null;
     },
     enabled: !!user,
   });

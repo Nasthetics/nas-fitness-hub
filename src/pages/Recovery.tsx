@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { format, subDays } from 'date-fns';
-import { Heart, Brain, Zap, Wind, Moon, TrendingUp } from 'lucide-react';
+import { Heart, Brain, Zap, Wind, Moon, TrendingUp, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,20 +28,47 @@ interface RecoveryCheckin {
   created_at: string;
 }
 
-function calculateRecoveryScore(sleep_hours: number, sleep_quality: number, energy: number, stress: number, breathwork: boolean): number {
-  const sleepHoursScore = Math.min(sleep_hours / 8, 1) * 25;
-  const sleepQualityScore = (sleep_quality / 5) * 25;
-  const energyScore = (energy / 5) * 20;
-  const stressScore = ((6 - stress) / 5) * 20;
-  const breathworkScore = breathwork ? 10 : 0;
-  return Math.round(sleepHoursScore + sleepQualityScore + energyScore + stressScore + breathworkScore);
+function calculateRecoveryScore(
+  sleepHours: number, sleepQuality: number, energy: number, stress: number, 
+  breathwork: boolean, hrv?: number | null, rhr?: number | null
+): number {
+  // Normalize each component to 0-100
+  const sleepScore = Math.min(sleepHours / 8, 1) * 100;
+  const sleepQualScore = (sleepQuality / 5) * 100;
+  const energyScore = (energy / 5) * 100;
+  const sorenessScore = ((6 - stress) / 5) * 100; // Inverted stress as soreness
+  const breathworkBonus = breathwork ? 5 : 0;
+
+  const hasHRV = hrv != null && hrv > 0;
+  const hasRHR = rhr != null && rhr > 0;
+
+  // HRV score: <20ms = 0, >80ms = 100
+  const hrvScore = hasHRV ? Math.min(Math.max((hrv! - 20) / 60, 0), 1) * 100 : 0;
+  // RHR score: >80 = 0, <50 = 100
+  const rhrScore = hasRHR ? Math.min(Math.max((80 - rhr!) / 30, 0), 1) * 100 : 0;
+
+  let score: number;
+  if (hasHRV && hasRHR) {
+    // Full composite: HRV 30%, Sleep 30%, RHR 15%, Energy 15%, Soreness 10%
+    score = hrvScore * 0.3 + sleepQualScore * 0.3 + rhrScore * 0.15 + energyScore * 0.15 + sorenessScore * 0.1;
+  } else if (hasHRV) {
+    // HRV 25%, Sleep 35%, Energy 25%, Soreness 15%
+    score = hrvScore * 0.25 + sleepQualScore * 0.35 + energyScore * 0.25 + sorenessScore * 0.15;
+  } else if (hasRHR) {
+    // RHR 15%, Sleep 40%, Energy 25%, Soreness 20%
+    score = rhrScore * 0.15 + sleepQualScore * 0.4 + energyScore * 0.25 + sorenessScore * 0.2;
+  } else {
+    // No HRV/RHR: Sleep 40%, Energy 30%, Soreness 20%, Sleep hours 10%
+    score = sleepQualScore * 0.4 + energyScore * 0.3 + sorenessScore * 0.2 + (sleepScore * 0.1);
+  }
+
+  return Math.round(Math.min(score + breathworkBonus, 100));
 }
 
 function getScoreRecommendation(score: number) {
-  if (score >= 85) return { label: 'Push Hard 💪', color: 'bg-green-500/20 text-green-400 border-green-500/30', desc: 'You\'re fully recovered. Hit it hard today!' };
-  if (score >= 65) return { label: 'Normal Session', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30', desc: 'Good recovery. Proceed with your planned workout.' };
-  if (score >= 40) return { label: 'Reduce Volume 20%', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', desc: 'Moderate recovery. Drop a set from each exercise.' };
-  return { label: 'Active Recovery Only', color: 'bg-red-500/20 text-red-400 border-red-500/30', desc: 'Low recovery. Light stretching, walking, or mobility work only.' };
+  if (score > 67) return { label: 'Train Hard 💪', color: 'bg-green-500/20 text-green-400 border-green-500/30', badge: 'bg-green-500', desc: 'You\'re fully recovered. Hit it hard today!' };
+  if (score >= 34) return { label: 'Train Moderate', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', badge: 'bg-amber-500', desc: 'Moderate recovery. Standard session, watch volume.' };
+  return { label: 'Rest / Deload', color: 'bg-red-500/20 text-red-400 border-red-500/30', badge: 'bg-red-500', desc: 'Low recovery. Light stretching, walking, or mobility work only.' };
 }
 
 export default function Recovery() {
@@ -54,6 +81,8 @@ export default function Recovery() {
   const [energy, setEnergy] = useState(3);
   const [stress, setStress] = useState(3);
   const [breathwork, setBreathwork] = useState(false);
+  const [hrv, setHrv] = useState('');
+  const [rhr, setRhr] = useState('');
 
   const today = format(new Date(), 'yyyy-MM-dd');
   const sevenDaysAgo = format(subDays(new Date(), 7), 'yyyy-MM-dd');
@@ -79,7 +108,9 @@ export default function Recovery() {
   const submitCheckin = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Not authenticated');
-      const score = calculateRecoveryScore(sleepHours, sleepQuality, energy, stress, breathwork);
+      const hrvVal = hrv ? parseFloat(hrv) : null;
+      const rhrVal = rhr ? parseFloat(rhr) : null;
+      const score = calculateRecoveryScore(sleepHours, sleepQuality, energy, stress, breathwork, hrvVal, rhrVal);
       const { error } = await supabase
         .from('recovery_checkins')
         .upsert({
@@ -117,8 +148,13 @@ export default function Recovery() {
     return Math.round(recent.reduce((sum, c) => sum + (c.recovery_score || 0), 0) / recent.length);
   }, [checkins, sevenDaysAgo]);
 
-  const currentScore = todayCheckin?.recovery_score || calculateRecoveryScore(sleepHours, sleepQuality, energy, stress, breathwork);
+  const hrvVal = hrv ? parseFloat(hrv) : null;
+  const rhrVal = rhr ? parseFloat(rhr) : null;
+  const currentScore = todayCheckin?.recovery_score || calculateRecoveryScore(sleepHours, sleepQuality, energy, stress, breathwork, hrvVal, rhrVal);
   const recommendation = getScoreRecommendation(currentScore);
+
+  // Traffic light
+  const trafficLight = currentScore > 67 ? 'bg-green-500' : currentScore >= 34 ? 'bg-amber-500' : 'bg-red-500';
 
   return (
     <div className="space-y-6 animate-in">
@@ -126,7 +162,7 @@ export default function Recovery() {
         <h1 className="text-3xl font-bold text-foreground">Recovery</h1>
         <p className="text-muted-foreground mt-1">Daily 10-second check-in</p>
       </div>
-      {/* Muscle Recovery Heatmap */}
+      
       <MuscleHeatmap />
 
       {/* Score Display */}
@@ -134,19 +170,37 @@ export default function Recovery() {
         <Card className="border-primary/30">
           <CardContent className="pt-6 text-center">
             <div className="text-6xl font-bold text-primary mb-2">{currentScore}</div>
-            <div className="text-sm text-muted-foreground mb-4">Recovery Score</div>
+            <div className="text-sm text-muted-foreground mb-3">Recovery Score</div>
+            {/* Traffic light */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className={`w-3 h-3 rounded-full ${currentScore > 67 ? 'bg-green-500' : 'bg-muted'}`} />
+              <div className={`w-3 h-3 rounded-full ${currentScore >= 34 && currentScore <= 67 ? 'bg-amber-500' : 'bg-muted'}`} />
+              <div className={`w-3 h-3 rounded-full ${currentScore < 34 ? 'bg-red-500' : 'bg-muted'}`} />
+            </div>
             <Badge className={recommendation.color}>{recommendation.label}</Badge>
             <p className="text-sm text-muted-foreground mt-3">{recommendation.desc}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-4xl font-bold mb-2">{avgScore}</div>
-            <div className="text-sm text-muted-foreground">7-Day Average</div>
-            <div className="text-xs text-muted-foreground mt-2">
-              {checkins.filter(c => c.checkin_date >= sevenDaysAgo).length}/7 days logged
+          <CardContent className="pt-6">
+            <div className="text-center mb-4">
+              <div className="text-4xl font-bold">{avgScore}</div>
+              <div className="text-sm text-muted-foreground">7-Day Average</div>
+              <div className="text-xs text-muted-foreground mt-1">
+                {checkins.filter(c => c.checkin_date >= sevenDaysAgo).length}/7 days logged
+              </div>
             </div>
+            {/* Sparkline */}
+            {chartData.length > 1 && (
+              <div className="h-16">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <Line type="monotone" dataKey="score" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -179,15 +233,7 @@ export default function Recovery() {
             </Label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map(v => (
-                <Button
-                  key={v}
-                  variant={sleepQuality === v ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSleepQuality(v)}
-                  className="flex-1"
-                >
-                  {v}
-                </Button>
+                <Button key={v} variant={sleepQuality === v ? 'default' : 'outline'} size="sm" onClick={() => setSleepQuality(v)} className="flex-1">{v}</Button>
               ))}
             </div>
           </div>
@@ -198,35 +244,47 @@ export default function Recovery() {
             </Label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map(v => (
-                <Button
-                  key={v}
-                  variant={energy === v ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setEnergy(v)}
-                  className="flex-1"
-                >
-                  {v}
-                </Button>
+                <Button key={v} variant={energy === v ? 'default' : 'outline'} size="sm" onClick={() => setEnergy(v)} className="flex-1">{v}</Button>
               ))}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
-              <Brain className="h-4 w-4" /> Stress: {stress}/5
+              <Brain className="h-4 w-4" /> Stress / Soreness: {stress}/5
             </Label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map(v => (
-                <Button
-                  key={v}
-                  variant={stress === v ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setStress(v)}
-                  className="flex-1"
-                >
-                  {v}
-                </Button>
+                <Button key={v} variant={stress === v ? 'default' : 'outline'} size="sm" onClick={() => setStress(v)} className="flex-1">{v}</Button>
               ))}
+            </div>
+          </div>
+
+          {/* HRV & RHR optional fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm">
+                <Activity className="h-4 w-4" /> HRV (ms)
+              </Label>
+              <Input
+                type="number"
+                placeholder="e.g. 65"
+                value={hrv}
+                onChange={(e) => setHrv(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground">Optional — from WHOOP/Garmin</p>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm">
+                <Heart className="h-4 w-4" /> RHR (bpm)
+              </Label>
+              <Input
+                type="number"
+                placeholder="e.g. 52"
+                value={rhr}
+                onChange={(e) => setRhr(e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground">Optional — resting heart rate</p>
             </div>
           </div>
 
