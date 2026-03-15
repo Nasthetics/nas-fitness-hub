@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   
