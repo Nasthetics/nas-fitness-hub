@@ -197,9 +197,9 @@ export default function Dashboard() {
 
       {/* Recovery Score + Today's Workout */}
       <div className="grid md:grid-cols-2 gap-4">
-        <Card className={recoveryBg}>
+        <Card className="bg-card border-border">
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-card">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
               <Heart className={`h-8 w-8 ${recoveryColor}`} />
             </div>
             <div className="flex-1">
