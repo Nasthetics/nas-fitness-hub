@@ -302,45 +302,44 @@ export default function Nutrition() {
         />
       </div>
 
-      {/* Add Meal Dialog */}
-      <Dialog open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
-        <DialogTrigger asChild>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Meal
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Meal</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Meal Name</Label>
-              <Input
-                placeholder="e.g., Breakfast, Pre-workout, Dinner"
-                value={newMealName}
-                onChange={(e) => setNewMealName(e.target.value)}
-              />
+      {/* Add Meal Sheet */}
+      <div>
+        <Button onClick={() => setIsAddMealDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Meal
+        </Button>
+      </div>
+      <Sheet open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
+        <SheetContent side="bottom" className="h-[60vh] w-full max-w-[100vw] rounded-t-2xl px-4">
+          <div className="flex h-full flex-col">
+            <SheetHeader className="pb-2">
+              <SheetTitle className="text-left">Add Meal</SheetTitle>
+            </SheetHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Meal Name</Label>
+                <Input
+                  placeholder="e.g., Breakfast, Pre-workout, Dinner"
+                  value={newMealName}
+                  onChange={(e) => setNewMealName(e.target.value)}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={isTrainingDay} onCheckedChange={setIsTrainingDay} />
+                <Label>Training day</Label>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={isTrainingDay}
-                onCheckedChange={setIsTrainingDay}
-              />
-              <Label>Training day</Label>
+            <div className="mt-auto grid grid-cols-2 gap-2 border-t border-border pt-4 pb-[env(safe-area-inset-bottom,16px)]">
+              <Button variant="outline" onClick={() => setIsAddMealDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()}>
+                Create
+              </Button>
             </div>
           </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()}>
-              Create Meal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Meals List or Empty State */}
       <div className="space-y-4">
