@@ -439,6 +439,63 @@ export default function Nutrition() {
           })
         )}
       </div>
+
+      {/* Scanned Product Dialog */}
+      <Dialog open={!!scannedProduct} onOpenChange={(v) => { if (!v) setScannedProduct(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scanned Product</DialogTitle>
+          </DialogHeader>
+          {scannedProduct && (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-accent/50 rounded-lg">
+                <div className="font-medium text-lg">{scannedProduct.name}</div>
+                <div className="grid grid-cols-4 gap-2 mt-2 text-sm text-muted-foreground">
+                  <div><span className="font-medium text-foreground">{scannedProduct.calories}</span> kcal</div>
+                  <div><span className="font-medium text-foreground">{scannedProduct.protein}g</span> P</div>
+                  <div><span className="font-medium text-foreground">{scannedProduct.carbs}g</span> C</div>
+                  <div><span className="font-medium text-foreground">{scannedProduct.fats}g</span> F</div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">per 100g</div>
+              </div>
+              <div className="space-y-2">
+                <Label>Quantity (grams)</Label>
+                <Input type="number" value={scannedQty} onChange={(e) => setScannedQty(e.target.value)} min="1" />
+              </div>
+              <div className="text-sm text-muted-foreground">
+                = {Math.round(scannedProduct.calories * parseFloat(scannedQty || '0') / 100)} kcal, {' '}
+                {Math.round(scannedProduct.protein * parseFloat(scannedQty || '0') / 100 * 10) / 10}g protein
+              </div>
+              {mealLogs.length > 0 ? (
+                <div className="space-y-2">
+                  <Label>Add to meal</Label>
+                  <div className="grid gap-2">
+                    {mealLogs.map(meal => (
+                      <Button
+                        key={meal.id}
+                        variant={scannedMealId === meal.id ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setScannedMealId(meal.id)}
+                        className="justify-start"
+                      >
+                        {meal.meal_name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Create a meal first to add this food.</p>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button onClick={handleAddScannedFood} disabled={!scannedMealId || !scannedProduct}>
+              Add to Meal
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
