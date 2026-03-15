@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { BulkQualityCard } from '@/components/progress/BulkQualityCard';
+import { AnalyticsTab } from '@/components/progress/AnalyticsTab';
 import { useBodyMetrics, useCreateBodyMetric } from '@/hooks/use-fitness-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
