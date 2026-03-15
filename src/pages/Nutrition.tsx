@@ -17,6 +17,9 @@ import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState'
 import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
 import { WaterTracker } from '@/components/nutrition/WaterTracker';
 import { BarcodeScanner } from '@/components/nutrition/BarcodeScanner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import type { Food } from '@/lib/types';
 
 export default function Nutrition() {
