@@ -495,6 +495,10 @@ export default function Progress() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="strength">
+          <StrengthTab />
+        </TabsContent>
+
         <TabsContent value="analytics">
           <AnalyticsTab />
         </TabsContent>
