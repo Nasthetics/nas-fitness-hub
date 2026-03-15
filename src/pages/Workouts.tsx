@@ -46,6 +46,7 @@ export default function Workouts() {
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
   const [restTimerActive, setRestTimerActive] = useState(false);
   const [restTimerSeconds, setRestTimerSeconds] = useState(90);
   const [isPaused, setIsPaused] = useState(false);
