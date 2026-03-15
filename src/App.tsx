@@ -20,6 +20,8 @@ import Periodization from "./pages/Periodization";
 import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 import Coach from "./pages/Coach";
+import Cardio from "./pages/Cardio";
+import Groceries from "./pages/Groceries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
