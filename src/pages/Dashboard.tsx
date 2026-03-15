@@ -19,15 +19,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { DeloadBanner } from '@/components/workouts/DeloadBanner';
 import { TargetEditModal } from '@/components/dashboard/TargetEditModal';
-import { 
-  useTodayWorkout, useWorkoutLogs, useMealLogs, useWorkoutTemplates,
-  useSupplements, useSupplementLogs, useBodyMetrics, useProfile
-} from '@/hooks/use-fitness-data';
-import { WORKOUT_DAY_INFO, type WorkoutDayType } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQuery } from '@tanstack/react-query';
-import { DeloadBanner } from '@/components/workouts/DeloadBanner';
 
 export default function Dashboard() {
   const navigate = useNavigate();
