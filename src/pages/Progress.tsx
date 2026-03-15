@@ -206,19 +206,18 @@ export default function Progress() {
           </p>
         </div>
         
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Log Metrics
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Log Body Metrics</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+        <Button onClick={() => setIsLogMetricsSheetOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Log Metrics
+        </Button>
+        <Sheet open={isLogMetricsSheetOpen} onOpenChange={setIsLogMetricsSheetOpen}>
+          <SheetContent side="bottom" className="h-[85vh] w-full max-w-[100vw] rounded-t-2xl px-4">
+            <div className="flex h-full flex-col">
+              <SheetHeader className="pb-2">
+                <SheetTitle className="text-left">Log Body Metrics</SheetTitle>
+              </SheetHeader>
+
+              <div className="flex-1 space-y-4 overflow-y-auto py-2 pr-1">
                 <div className="space-y-2">
                   <Label>Weight (kg)</Label>
                   <Input
@@ -229,6 +228,7 @@ export default function Progress() {
                     onChange={(e) => setNewWeight(e.target.value)}
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label>Body Fat %</Label>
                   <Input
@@ -239,9 +239,7 @@ export default function Progress() {
                     onChange={(e) => setNewBodyFat(e.target.value)}
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+
                 <div className="space-y-2">
                   <Label>Waist (cm)</Label>
                   <Input
@@ -252,6 +250,7 @@ export default function Progress() {
                     onChange={(e) => setNewWaist(e.target.value)}
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label>Chest (cm)</Label>
                   <Input
@@ -262,9 +261,7 @@ export default function Progress() {
                     onChange={(e) => setNewChest(e.target.value)}
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+
                 <div className="space-y-2">
                   <Label>Arms (cm)</Label>
                   <Input
@@ -275,6 +272,7 @@ export default function Progress() {
                     onChange={(e) => setNewArms(e.target.value)}
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label>Legs (cm)</Label>
                   <Input
@@ -285,9 +283,7 @@ export default function Progress() {
                     onChange={(e) => setNewLegs(e.target.value)}
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+
                 <div className="space-y-2">
                   <Label>WHOOP Recovery %</Label>
                   <Input
@@ -299,6 +295,7 @@ export default function Progress() {
                     onChange={(e) => setNewWhoopRecovery(e.target.value)}
                   />
                 </div>
+
                 <div className="space-y-2">
                   <Label>WHOOP Sleep (hrs)</Label>
                   <Input
@@ -309,29 +306,26 @@ export default function Progress() {
                     onChange={(e) => setNewWhoopSleep(e.target.value)}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    placeholder="How do you feel? Any observations?"
+                    value={newNotes}
+                    onChange={(e) => setNewNotes(e.target.value)}
+                  />
+                </div>
               </div>
-              
-              <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  placeholder="How do you feel? Any observations?"
-                  value={newNotes}
-                  onChange={(e) => setNewNotes(e.target.value)}
-                />
+
+              <div className="grid grid-cols-2 gap-2 border-t border-border pt-4 pb-[env(safe-area-inset-bottom,16px)]">
+                <Button variant="outline" onClick={() => setIsLogMetricsSheetOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateMetric}>Save Metrics</Button>
               </div>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <DialogClose asChild>
-                <Button onClick={handleCreateMetric}>
-                  Save Metrics
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Current Stats */}
