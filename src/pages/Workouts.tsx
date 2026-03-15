@@ -647,6 +647,19 @@ export default function Workouts() {
         </CardContent>
       </Card>
 
+      {/* Quick Workout Button */}
+      <Button 
+        onClick={handleQuickWorkout}
+        disabled={createWorkoutLog.isPending}
+        className="w-full h-16 text-lg font-bold rounded-xl gap-3 bg-info hover:bg-info/90 text-info-foreground"
+      >
+        <Zap className="h-6 w-6" />
+        <div className="flex flex-col items-start">
+          <span>Quick Workout</span>
+          <span className="text-xs font-normal opacity-80">Log any exercises freely</span>
+        </div>
+      </Button>
+
       {todayTemplate?.day_type === 'rest' ? (
         <Card className="border-muted">
           <CardContent className="flex flex-col items-center justify-center py-12">
