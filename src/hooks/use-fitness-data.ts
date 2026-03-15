@@ -288,7 +288,7 @@ export function useCreateWorkoutLog() {
   const { user } = useAuth();
   
   return useMutation({
-    mutationFn: async (data: { template_id?: string; workout_date: string }) => {
+    mutationFn: async (data: { template_id?: string | null; workout_date: string }) => {
       if (!user) throw new Error('Not authenticated');
       const { data: result, error } = await supabase
         .from('workout_logs')
