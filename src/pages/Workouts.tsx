@@ -43,6 +43,8 @@ export default function Workouts() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { isWorkoutMode, setIsWorkoutMode } = useWorkoutMode();
+  const { theme, setTheme } = useTheme();
+  const [preWorkoutTheme, setPreWorkoutTheme] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTemplateSetup, setShowTemplateSetup] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
