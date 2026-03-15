@@ -225,8 +225,7 @@ export default function Workouts() {
     }
   };
 
-
-    setIsWorkoutMode(true);
+  const handleEnterWorkoutMode = () => {
     setWorkoutStartTime(Date.now());
     setElapsedSeconds(0);
     setPausedElapsed(0);
