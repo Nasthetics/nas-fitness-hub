@@ -187,7 +187,7 @@ export function ExercisePicker({
               {MUSCLE_FILTERS.map(m => (
                 <button
                   key={m}
-                  onClick={() => setMuscleFilter(m)}
+                  onClick={() => { setMuscleFilter(m); setSubgroupFilter(null); }}
                   className={cn(
                     'px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                     muscleFilter === m 
@@ -199,6 +199,33 @@ export function ExercisePicker({
                 </button>
               ))}
             </div>
+
+            {/* Subgroup filter chips */}
+            {muscleFilter !== 'All' && SUBGROUP_MAP[muscleFilter] && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  onClick={() => setSubgroupFilter(null)}
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors',
+                    !subgroupFilter ? 'bg-primary text-primary-foreground' : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  All
+                </button>
+                {SUBGROUP_MAP[muscleFilter].map(sg => (
+                  <button
+                    key={sg}
+                    onClick={() => setSubgroupFilter(sg)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors',
+                      subgroupFilter === sg ? 'bg-primary text-primary-foreground' : 'bg-muted/70 text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {sg}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="space-y-2">
               {filteredExercises.map(renderExerciseCard)}
