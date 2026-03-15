@@ -134,12 +134,8 @@ export function ExercisePicker({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="h-[85vh] rounded-t-2xl px-0 pb-0 flex flex-col"
+        className="h-[85vh] px-0 pb-0 flex flex-col"
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 pb-2">
