@@ -218,4 +218,24 @@
   input[type="number"] {
     -moz-appearance: textfield;
   }
+
+  /* Hide scrollbar for filter chips */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Touch target minimum */
+  .touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Monospace for timer digits */
+  .font-mono {
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  }
 }
