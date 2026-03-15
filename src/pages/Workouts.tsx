@@ -209,7 +209,23 @@ export default function Workouts() {
     }
   };
 
-  const handleEnterWorkoutMode = () => {
+  const handleQuickWorkout = async () => {
+    try {
+      const result = await createWorkoutLog.mutateAsync({ template_id: null, workout_date: dateStr });
+      refetchTodayWorkout();
+      setIsWorkoutMode(true);
+      setWorkoutStartTime(Date.now());
+      setElapsedSeconds(0);
+      setPausedElapsed(0);
+      setIsPaused(false);
+      setShowExercisePicker(true);
+      toast({ title: 'Quick Workout started! ⚡' });
+    } catch (error) {
+      toast({ title: 'Error starting workout', description: (error as Error).message, variant: 'destructive' });
+    }
+  };
+
+
     setIsWorkoutMode(true);
     setWorkoutStartTime(Date.now());
     setElapsedSeconds(0);
