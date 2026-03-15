@@ -46,11 +46,14 @@ export default function Settings() {
   const [trainingP, setTrainingP] = useState('');
   const [trainingC, setTrainingC] = useState('');
   const [trainingF, setTrainingF] = useState('');
+  const [currentWeight, setCurrentWeight] = useState('');
   const [ramadanMode, setRamadanMode] = useState(false);
+  const [claudeApiKey, setClaudeApiKey] = useState(() => localStorage.getItem('claude_api_key') || '');
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
+      setCurrentWeight('95');
       setHeightCm(profile.height_cm?.toString() || '');
       setBodyFat(profile.body_fat_percent?.toString() || '');
       setLeanMass(profile.lean_mass_kg?.toString() || '');
