@@ -151,6 +151,7 @@ export default function Progress() {
     setNewNotes('');
     setNewWhoopRecovery('');
     setNewWhoopSleep('');
+    setIsLogMetricsSheetOpen(false);
   };
 
   const handlePhotoUpload = async () => {
