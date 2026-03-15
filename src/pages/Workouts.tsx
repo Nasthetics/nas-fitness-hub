@@ -53,8 +53,13 @@ export default function Workouts() {
   const [prCelebration, setPrCelebration] = useState<{ show: boolean; exerciseName: string; oldRecord: string; newRecord: string }>({
     show: false, exerciseName: '', oldRecord: '', newRecord: ''
   });
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(() => !localStorage.getItem('swipe-hint-shown'));
   const inactivityRef = useRef<NodeJS.Timeout | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Screen wake lock — keeps screen on during workout
+  useWakeLock(isWorkoutMode && !isPaused);
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
