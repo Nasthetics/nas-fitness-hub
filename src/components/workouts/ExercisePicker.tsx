@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import Fuse from 'fuse.js';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetClose } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Star, Clock, Dumbbell, Plus } from 'lucide-react';
+import { Search, Star, Clock, Dumbbell, Plus, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useExerciseLibrary } from '@/hooks/use-fitness-data';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,6 @@ export function ExercisePicker({
   const [newMuscle, setNewMuscle] = useState('Chest');
   const [newEquipment, setNewEquipment] = useState<EquipmentType>('barbell');
 
-  // Fuse.js instance
   const fuse = useMemo(() => new Fuse(exercises, {
     keys: ['name', 'primary_muscle_name', 'equipment'],
     threshold: 0.4,
@@ -58,14 +57,11 @@ export function ExercisePicker({
 
   const filteredExercises = useMemo(() => {
     let result: Exercise[];
-    
     if (search) {
-      const fuseResults = fuse.search(search);
-      result = fuseResults.map(r => r.item);
+      result = fuse.search(search).map(r => r.item);
     } else {
       result = exercises;
     }
-
     if (muscleFilter !== 'All') {
       const f = muscleFilter.toLowerCase();
       result = result.filter(e => 
@@ -80,10 +76,7 @@ export function ExercisePicker({
   }, [exercises, search, muscleFilter, subgroupFilter, fuse]);
 
   const recentExercises = useMemo(() => 
-    recentExerciseIds
-      .map(id => exercises.find(e => e.id === id))
-      .filter(Boolean)
-      .slice(0, 10) as Exercise[],
+    recentExerciseIds.map(id => exercises.find(e => e.id === id)).filter(Boolean).slice(0, 10) as Exercise[],
     [recentExerciseIds, exercises]
   );
 
@@ -108,7 +101,7 @@ export function ExercisePicker({
         onClick={() => { onSelect(exercise); onOpenChange(false); }}
         className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors text-left w-full min-h-[56px]"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10 shrink-0">
           <Dumbbell className="h-4 w-4 text-info" />
         </div>
         <div className="flex-1 min-w-0">
@@ -128,7 +121,7 @@ export function ExercisePicker({
         {onToggleFavourite && (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleFavourite(exercise.id); }}
-            className="p-1"
+            className="p-1 shrink-0"
           >
             <Star className={cn('h-4 w-4', isFav ? 'fill-warning text-warning' : 'text-muted-foreground')} />
           </button>
@@ -138,17 +131,27 @@ export function ExercisePicker({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] sm:max-h-[85vh] h-[80vh] sm:h-auto overflow-hidden flex flex-col fixed inset-x-0 bottom-0 sm:bottom-auto sm:inset-x-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] translate-x-0 translate-y-0 rounded-t-2xl sm:rounded-lg w-full sm:w-full">
-        {/* Drag handle for mobile */}
-        <div className="sm:hidden flex justify-center pt-2 pb-1">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="h-[85vh] rounded-t-2xl px-0 pb-0 flex flex-col"
+      >
+        {/* Drag handle */}
+        <div className="flex justify-center pt-2 pb-1">
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
-        <DialogHeader>
-          <DialogTitle className="text-center sm:text-left">Add Exercise</DialogTitle>
-        </DialogHeader>
 
-        <Tabs defaultValue={recentExercises.length > 0 ? 'recent' : 'all'} className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pb-2">
+          <h2 className="text-lg font-semibold">Add Exercise</h2>
+          <SheetClose asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
+          </SheetClose>
+        </div>
+
+        <Tabs defaultValue={recentExercises.length > 0 ? 'recent' : 'all'} className="flex-1 flex flex-col overflow-hidden px-4">
           <TabsList className="w-full">
             <TabsTrigger value="recent" className="flex-1 gap-1">
               <Clock className="h-3.5 w-3.5" />Recent
@@ -161,7 +164,7 @@ export function ExercisePicker({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="recent" className="flex-1 overflow-y-auto mt-3 space-y-2">
+          <TabsContent value="recent" className="flex-1 overflow-y-auto mt-3 space-y-2 pb-6">
             {recentExercises.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">No recent exercises yet</p>
             ) : (
@@ -169,7 +172,7 @@ export function ExercisePicker({
             )}
           </TabsContent>
 
-          <TabsContent value="favourites" className="flex-1 overflow-y-auto mt-3 space-y-2">
+          <TabsContent value="favourites" className="flex-1 overflow-y-auto mt-3 space-y-2 pb-6">
             {favouriteExercises.length === 0 ? (
               <p className="text-center text-muted-foreground py-8 text-sm">Star exercises to add them here</p>
             ) : (
@@ -177,14 +180,14 @@ export function ExercisePicker({
             )}
           </TabsContent>
 
-          <TabsContent value="all" className="flex-1 overflow-y-auto mt-3 space-y-3">
+          <TabsContent value="all" className="flex-1 overflow-y-auto mt-3 space-y-3 pb-6">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search exercises... (fuzzy: 'bch prs' → Bench Press)"
+                placeholder="Search... (try 'bch prs' for Bench Press)"
                 className="pl-9"
               />
             </div>
@@ -237,7 +240,6 @@ export function ExercisePicker({
             <div className="space-y-2">
               {filteredExercises.map(renderExerciseCard)}
               
-              {/* Inline create when no results */}
               {filteredExercises.length === 0 && search.trim() && (
                 <div className="space-y-3 py-4">
                   <p className="text-center text-muted-foreground text-sm">No exercises found</p>
@@ -286,8 +288,8 @@ export function ExercisePicker({
             </div>
           </TabsContent>
         </Tabs>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
