@@ -380,10 +380,7 @@ export default function Supplements() {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span title="Weekly adherence">{adherence}%</span>
-                        <span title="Streak">🔥 {streak}d</span>
-                      </div>
+                      {/* Clean checkbox indicator only - no clutter */}
                     </div>
                   );
                 })}

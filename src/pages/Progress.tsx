@@ -401,13 +401,15 @@ export default function Progress() {
 
       {/* Charts */}
       <Tabs defaultValue="weight" className="space-y-4">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="weight">Weight Trend</TabsTrigger>
-          <TabsTrigger value="measurements">Measurements</TabsTrigger>
-          <TabsTrigger value="strength">Strength</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="photos">Progress Photos</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto no-scrollbar -mx-1 px-1">
+          <TabsList className="flex-nowrap w-max">
+            <TabsTrigger value="weight">Weight Trend</TabsTrigger>
+            <TabsTrigger value="measurements">Measurements</TabsTrigger>
+            <TabsTrigger value="strength">Strength</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="photos">Progress Photos</TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="weight">
           <Card>

@@ -230,6 +230,49 @@ export default function Settings() {
         )}
       </Card>
 
+      {/* AI Coach API Key */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI Coach</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Claude API Key</Label>
+            <Input
+              type="password"
+              value={claudeApiKey}
+              onChange={e => setClaudeApiKey(e.target.value)}
+              placeholder="sk-ant-..."
+            />
+            <p className="text-xs text-muted-foreground">Get your key from console.anthropic.com</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {claudeApiKey ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span className="text-sm text-green-500 font-medium">Connected</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Not configured</span>
+              </>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              localStorage.setItem('claude_api_key', claudeApiKey);
+              toast({ title: 'API key saved! ✅' });
+            }}
+            disabled={!claudeApiKey}
+            size="sm"
+          >
+            Save API Key
+          </Button>
+        </CardContent>
+      </Card>
+
       <Button onClick={handleSave} disabled={updateProfile.isPending} className="w-full" size="lg">
         Save Settings
       </Button>
