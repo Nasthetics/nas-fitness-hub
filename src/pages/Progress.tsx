@@ -404,6 +404,7 @@ export default function Progress() {
         <TabsList className="flex-wrap">
           <TabsTrigger value="weight">Weight Trend</TabsTrigger>
           <TabsTrigger value="measurements">Measurements</TabsTrigger>
+          <TabsTrigger value="strength">Strength</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="photos">Progress Photos</TabsTrigger>
         </TabsList>

@@ -714,6 +714,9 @@ export default function Workouts() {
         </CardContent>
       </Card>
 
+      {/* Deload Banner */}
+      <DeloadBanner />
+
       {/* Quick Workout Button */}
       <Button 
         onClick={handleQuickWorkout}
