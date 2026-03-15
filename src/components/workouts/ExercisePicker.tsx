@@ -139,9 +139,13 @@ export function ExercisePicker({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-lg max-h-[85vh] sm:max-h-[85vh] h-[80vh] sm:h-auto overflow-hidden flex flex-col fixed inset-x-0 bottom-0 sm:bottom-auto sm:inset-x-auto sm:left-[50%] sm:top-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] translate-x-0 translate-y-0 rounded-t-2xl sm:rounded-lg w-full sm:w-full">
+        {/* Drag handle for mobile */}
+        <div className="sm:hidden flex justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+        </div>
         <DialogHeader>
-          <DialogTitle>Add Exercise</DialogTitle>
+          <DialogTitle className="text-center sm:text-left">Add Exercise</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue={recentExercises.length > 0 ? 'recent' : 'all'} className="flex-1 flex flex-col overflow-hidden">

@@ -31,7 +31,7 @@ export function TargetEditModal({ open, onOpenChange, label, unit, currentValue,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xs">
+      <DialogContent className="max-w-xs w-[calc(100vw-32px)]">
         <DialogHeader>
           <DialogTitle>Edit {label} Target</DialogTitle>
         </DialogHeader>

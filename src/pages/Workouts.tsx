@@ -613,7 +613,7 @@ export default function Workouts() {
 
           <Button 
             variant="outline" 
-            className="w-full h-14 rounded-xl border-dashed"
+            className="w-full h-14 rounded-xl border-dashed mx-auto max-w-full"
             onClick={() => setShowExercisePicker(true)}
           >
             <Plus className="h-5 w-5 mr-2" /> Add Exercise
@@ -622,7 +622,8 @@ export default function Workouts() {
           {clampedIndex >= exerciseLogs.length - 1 && (
             <Button 
               onClick={handleCompleteWorkout}
-              className="w-full h-14 text-lg font-bold rounded-xl bg-success hover:bg-success/90 text-success-foreground"
+              className="w-full h-14 text-lg font-bold rounded-xl bg-success hover:bg-success/90 text-success-foreground mx-4 sm:mx-0"
+              style={{ width: 'calc(100% - 0px)' }}
             >
               <Check className="h-5 w-5 mr-2" /> Finish Workout
             </Button>
