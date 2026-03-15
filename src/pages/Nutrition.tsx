@@ -217,6 +217,14 @@ export default function Nutrition() {
             <div className="text-xs text-muted-foreground mt-1">
               / {targets.calories} kcal
             </div>
+            {cardioCalories > 0 && (
+              <div className="flex items-center gap-1 mt-2 text-xs">
+                <Activity className="h-3 w-3 text-orange-400" />
+                <span className="text-muted-foreground">Burned:</span>
+                <span className="font-medium text-orange-400">{cardioCalories} kcal</span>
+                <span className="text-muted-foreground">from cardio</span>
+              </div>
+            )}
           </CardContent>
         </Card>
         
