@@ -301,6 +301,40 @@ export default function Workouts() {
     const secs = elapsedSeconds % 60;
     const timeStr = `${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
 
+    const clampedIndex = Math.min(currentExerciseIndex, exerciseLogs.length - 1);
+    const currentEx = exerciseLogs[clampedIndex];
+
+    const goNext = () => {
+      if (clampedIndex < exerciseLogs.length - 1) {
+        setCurrentExerciseIndex(clampedIndex + 1);
+        if (showSwipeHint) {
+          setShowSwipeHint(false);
+          localStorage.setItem('swipe-hint-shown', 'true');
+        }
+      }
+    };
+    const goPrev = () => {
+      if (clampedIndex > 0) {
+        setCurrentExerciseIndex(clampedIndex - 1);
+        if (showSwipeHint) {
+          setShowSwipeHint(false);
+          localStorage.setItem('swipe-hint-shown', 'true');
+        }
+      }
+    };
+
+    const swipeHandlers = {
+      onTouchStart: (e: React.TouchEvent) => { (window as any).__swipeStartX = e.touches[0].clientX; (window as any).__swipeStartY = e.touches[0].clientY; },
+      onTouchMove: () => {},
+      onTouchEnd: (e: React.TouchEvent) => {
+        const dx = e.changedTouches[0].clientX - ((window as any).__swipeStartX || 0);
+        const dy = e.changedTouches[0].clientY - ((window as any).__swipeStartY || 0);
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+          if (dx < 0) goNext(); else goPrev();
+        }
+      },
+    };
+
     return (
       <div className="flex flex-col min-h-screen bg-background">
         {/* Paused overlay */}
@@ -308,6 +342,7 @@ export default function Workouts() {
           <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur flex flex-col items-center justify-center gap-6">
             <Pause className="h-16 w-16 text-muted-foreground" />
             <h2 className="text-3xl font-bold text-foreground">PAUSED</h2>
+            <p className="text-sm text-muted-foreground">Screen wake lock paused</p>
             <Button size="lg" onClick={() => setIsPaused(false)} className="gap-2 h-14 px-8 text-lg rounded-xl bg-info hover:bg-info/90 text-info-foreground">
               <Play className="h-5 w-5" /> Resume
             </Button>
@@ -335,13 +370,21 @@ export default function Workouts() {
               </Badge>
             </div>
           </div>
-          {/* Exercise progress */}
+          {/* Exercise progress dots */}
           <div className="mt-2">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-              <span>Exercise {Math.min(exerciseCount, exerciseCount)} of {exerciseCount}</span>
+              <span>Exercise {clampedIndex + 1} of {exerciseLogs.length}</span>
               <span>{workoutStats.setsDone}/{workoutStats.totalSets} sets</span>
             </div>
-            <Progress value={workoutStats.totalSets > 0 ? (workoutStats.setsDone / workoutStats.totalSets) * 100 : 0} className="h-1.5" />
+            <div className="flex gap-1">
+              {exerciseLogs.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentExerciseIndex(i)}
+                  className={`h-1.5 flex-1 rounded-full transition-colors ${i === clampedIndex ? 'bg-info' : i < clampedIndex ? 'bg-info/40' : 'bg-muted'}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -353,15 +396,33 @@ export default function Workouts() {
           elapsedSeconds={elapsedSeconds}
         />
 
-        {/* Exercise cards */}
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {exerciseLogs.map((exerciseLog, idx) => (
+        {/* Swipe hint */}
+        {showSwipeHint && exerciseLogs.length > 1 && (
+          <div className="text-center py-2 text-xs text-muted-foreground animate-pulse">
+            ← Swipe to navigate exercises →
+          </div>
+        )}
+
+        {/* Current exercise card with swipe */}
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto" {...swipeHandlers}>
+          {/* Navigation arrows */}
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="icon" className="h-10 w-10" onClick={goPrev} disabled={clampedIndex === 0}>
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <span className="text-sm font-medium text-foreground">{currentEx?.exercise?.name || 'Exercise'}</span>
+            <Button variant="ghost" size="icon" className="h-10 w-10" onClick={goNext} disabled={clampedIndex >= exerciseLogs.length - 1}>
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {currentEx && (
             <EnhancedExerciseCard 
-              key={exerciseLog.id} 
-              exerciseLog={exerciseLog}
-              exerciseNumber={idx + 1}
-              totalExercises={exerciseCount}
-              templateExercise={templateExercises?.find(te => te.exercise_id === exerciseLog.exercise_id)}
+              key={currentEx.id} 
+              exerciseLog={currentEx}
+              exerciseNumber={clampedIndex + 1}
+              totalExercises={exerciseLogs.length}
+              templateExercise={templateExercises?.find(te => te.exercise_id === currentEx.exercise_id)}
               previousSets={[]}
               onAddSet={handleAddSet}
               onUpdateSet={handleUpdateSet}
@@ -371,7 +432,7 @@ export default function Workouts() {
                 if (navigator.vibrate) navigator.vibrate(50);
               }}
             />
-          ))}
+          )}
 
           {/* Add exercise button */}
           <Button 
@@ -383,12 +444,14 @@ export default function Workouts() {
           </Button>
 
           {/* Finish workout */}
-          <Button 
-            onClick={handleCompleteWorkout}
-            className="w-full h-14 text-lg font-bold rounded-xl bg-success hover:bg-success/90 text-success-foreground"
-          >
-            <Check className="h-5 w-5 mr-2" /> Finish Workout
-          </Button>
+          {clampedIndex >= exerciseLogs.length - 1 && (
+            <Button 
+              onClick={handleCompleteWorkout}
+              className="w-full h-14 text-lg font-bold rounded-xl bg-success hover:bg-success/90 text-success-foreground"
+            >
+              <Check className="h-5 w-5 mr-2" /> Finish Workout
+            </Button>
+          )}
         </div>
 
         {/* Exit dialog */}
