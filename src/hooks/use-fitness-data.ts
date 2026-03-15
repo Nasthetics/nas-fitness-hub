@@ -90,7 +90,7 @@ export function useFoodDatabase() {
 // ============ PROFILE ============
 const CORRECT_DEFAULTS = {
   training_day_calories: 2556,
-  training_day_protein: 246,
+  training_day_protein: 245,
   training_day_carbs: 189,
   training_day_fats: 91,
   water_target_ml: 4000,
@@ -101,13 +101,13 @@ async function migrateStaleProfile(profile: Profile, userId: string) {
     profile.training_day_calories === 2800 ||
     profile.training_day_protein === 200 ||
     profile.display_name === 'Anas' ||
-    (!profile.display_name);
+    !profile.display_name;
 
   if (!needsFix) return profile;
 
   const updates: Record<string, any> = {};
   if (profile.training_day_calories === 2800) updates.training_day_calories = 2556;
-  if (profile.training_day_protein === 200) updates.training_day_protein = 246;
+  if (profile.training_day_protein === 200) updates.training_day_protein = 245;
   if (profile.training_day_carbs === 300) updates.training_day_carbs = 189;
   if (profile.training_day_fats === 80) updates.training_day_fats = 91;
   if (profile.display_name === 'Anas' || !profile.display_name) updates.display_name = 'Nas';
