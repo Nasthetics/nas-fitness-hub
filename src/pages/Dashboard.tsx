@@ -165,7 +165,7 @@ export default function Dashboard() {
         <div className="relative" style={{ width: size, height: size }}>
           <svg width={size} height={size} className="-rotate-90">
             <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={sw} />
-            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={sw} strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round" className="transition-all duration-700" />
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--primary))" strokeWidth={sw} strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round" className="transition-all duration-700" />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-sm font-bold">{Math.round(pct * 100)}%</span>
@@ -280,23 +280,23 @@ export default function Dashboard() {
       <div className="grid grid-cols-3 gap-3">
         <button
           onClick={() => navigate('/workouts')}
-          className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card border-2 border-[hsl(199,89%,48%)] p-4 min-w-[80px] min-h-[72px] transition-colors hover:bg-[hsl(199,89%,48%,0.08)]"
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-4 min-w-[80px] min-h-[72px] transition-colors hover:border-primary/40"
         >
-          <Dumbbell className="h-7 w-7 text-[hsl(199,89%,48%)]" />
+          <Dumbbell className="h-7 w-7 text-primary" />
           <span className="text-xs font-semibold text-foreground">Log Workout</span>
         </button>
         <button
           onClick={() => navigate('/nutrition')}
-          className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card border-2 border-[hsl(142,76%,48%)] p-4 min-w-[80px] min-h-[72px] transition-colors hover:bg-[hsl(142,76%,48%,0.08)]"
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-4 min-w-[80px] min-h-[72px] transition-colors hover:border-primary/40"
         >
-          <Apple className="h-7 w-7 text-[hsl(142,76%,48%)]" />
+          <Apple className="h-7 w-7 text-primary" />
           <span className="text-xs font-semibold text-foreground">Add Meal</span>
         </button>
         <button
           onClick={() => navigate('/progress')}
-          className="flex flex-col items-center justify-center gap-2 rounded-xl bg-card border-2 border-[hsl(25,100%,56%)] p-4 min-w-[80px] min-h-[72px] transition-colors hover:bg-[hsl(25,100%,56%,0.08)]"
+          className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-4 min-w-[80px] min-h-[72px] transition-colors hover:border-primary/40"
         >
-          <Scale className="h-7 w-7 text-[hsl(25,100%,56%)]" />
+          <Scale className="h-7 w-7 text-primary" />
           <span className="text-xs font-semibold text-foreground">Log Weight</span>
         </button>
       </div>

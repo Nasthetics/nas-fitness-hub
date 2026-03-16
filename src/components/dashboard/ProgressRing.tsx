@@ -9,7 +9,7 @@ interface ProgressRingProps {
   icon?: React.ReactNode;
 }
 
-export function ProgressRing({ value, max, size = 100, strokeWidth = 8, label, unit = '', color = 'hsl(var(--primary))' }: ProgressRingProps) {
+export function ProgressRing({ value, max, size = 100, strokeWidth = 8, label, unit = '' }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const percent = Math.min(value / max, 1);
@@ -31,7 +31,7 @@ export function ProgressRing({ value, max, size = 100, strokeWidth = 8, label, u
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={color}
+          stroke="hsl(var(--primary))"
           strokeWidth={strokeWidth}
           strokeDasharray={circumference}
           strokeDashoffset={offset}
