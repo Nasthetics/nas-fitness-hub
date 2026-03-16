@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Droplets, User, Bot, CheckCircle2, AlertCircle, Target, Dumbbell } from 'lucide-react';
+import { Moon, Droplets, User, Bot, CheckCircle2, AlertCircle, Target, Dumbbell, Settings as SettingsIcon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useProfile, useUpdateProfile } from '@/hooks/use-fitness-data';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const DUBAI_PRAYER_TIMES = [
   { name: 'Fajr', time: '05:10' },
@@ -35,6 +35,7 @@ export default function Settings() {
   const { data: profile } = useProfile();
   const updateProfile = useUpdateProfile();
   const { toast } = useToast();
+  const { user, signOut } = useAuth();
 
   const [displayName, setDisplayName] = useState('');
   const [heightCm, setHeightCm] = useState('');
@@ -45,7 +46,6 @@ export default function Settings() {
   const [ramadanMode, setRamadanMode] = useState(false);
   const [claudeApiKey, setClaudeApiKey] = useState(() => localStorage.getItem('claude_api_key') || '');
 
-  // Daily Targets
   const [trainingCal, setTrainingCal] = useState('2556');
   const [trainingP, setTrainingP] = useState('245');
   const [trainingC, setTrainingC] = useState('189');
@@ -53,7 +53,6 @@ export default function Settings() {
   const [waterTarget, setWaterTarget] = useState('4000');
   const [weeklyWorkoutTarget, setWeeklyWorkoutTarget] = useState('5');
 
-  // Rest day targets
   const [restDayDifferent, setRestDayDifferent] = useState(true);
   const [restCal, setRestCal] = useState('2256');
   const [restP, setRestP] = useState('245');
@@ -107,7 +106,6 @@ export default function Settings() {
       ramadan_mode: ramadanMode,
     } as any);
     
-    // Also save to localStorage as fallback
     localStorage.setItem('targets_backup', JSON.stringify({
       training_day_calories: parseInt(trainingCal),
       training_day_protein: parseInt(trainingP),
@@ -117,238 +115,166 @@ export default function Settings() {
       weekly_workout_target: parseInt(weeklyWorkoutTarget),
     }));
     
-    toast({ title: 'Targets updated ✅' });
+    toast({ title: 'Settings saved ✅' });
   };
+
+  const initials = (displayName || 'N').charAt(0).toUpperCase();
 
   return (
     <div className="space-y-6 animate-in">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground mt-1">Profile & preferences</p>
+      {/* Avatar + Name */}
+      <div className="flex flex-col items-center pt-4">
+        <div className="h-20 w-20 rounded-full bg-secondary flex items-center justify-center text-2xl font-bold text-foreground">
+          {initials}
+        </div>
+        <h2 className="text-xl font-bold text-foreground mt-3">{displayName || 'User'}</h2>
+        <p className="text-xs text-muted-foreground">{user?.email}</p>
       </div>
 
-      {/* Profile */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><User className="h-5 w-5" /> Profile</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Display Name</Label>
+      {/* Profile Section */}
+      <div>
+        <p className="section-label">Profile</p>
+        <div className="rounded-2xl bg-card border border-border p-4 space-y-3 mt-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Display Name</Label>
               <Input value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="Nas" />
             </div>
-            <div className="space-y-2">
-              <Label>Current Weight (kg)</Label>
-              <Input type="number" step="0.1" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} placeholder="95" />
+            <div className="space-y-1">
+              <Label className="text-xs">Weight (kg)</Label>
+              <Input type="number" step="0.1" value={currentWeight} onChange={e => setCurrentWeight(e.target.value)} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Height (cm)</Label>
-              <Input type="number" value={heightCm} onChange={e => setHeightCm(e.target.value)} placeholder="190" />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Height (cm)</Label>
+              <Input type="number" value={heightCm} onChange={e => setHeightCm(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label>Body Fat %</Label>
-              <Input type="number" value={bodyFat} onChange={e => setBodyFat(e.target.value)} placeholder="14" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Lean Mass (kg)</Label>
-              <Input type="number" value={leanMass} onChange={e => setLeanMass(e.target.value)} placeholder="81.7" />
-            </div>
-            <div className="space-y-2">
-              <Label>Target Gain (kg/wk)</Label>
-              <Input type="number" step="0.1" value={targetGain} onChange={e => setTargetGain(e.target.value)} placeholder="0.3" />
+            <div className="space-y-1">
+              <Label className="text-xs">Body Fat %</Label>
+              <Input type="number" value={bodyFat} onChange={e => setBodyFat(e.target.value)} />
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Lean Mass (kg)</Label>
+              <Input type="number" value={leanMass} onChange={e => setLeanMass(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Target Gain (kg/wk)</Label>
+              <Input type="number" step="0.1" value={targetGain} onChange={e => setTargetGain(e.target.value)} />
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Daily Targets */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5" /> Daily Targets</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Training Day Targets */}
+      <div>
+        <p className="section-label">Daily Targets</p>
+        <div className="rounded-2xl bg-card border border-border p-4 space-y-4 mt-2">
           <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-              <Dumbbell className="h-4 w-4" /> 
-              {restDayDifferent ? 'Training Day' : 'Daily Targets'}
-            </h3>
-            <div className="grid grid-cols-4 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Calories</Label>
-                <Input type="number" value={trainingCal} onChange={e => setTrainingCal(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Protein (g)</Label>
-                <Input type="number" value={trainingP} onChange={e => setTrainingP(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Carbs (g)</Label>
-                <Input type="number" value={trainingC} onChange={e => setTrainingC(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Fats (g)</Label>
-                <Input type="number" value={trainingF} onChange={e => setTrainingF(e.target.value)} />
-              </div>
+            <p className="text-xs font-semibold text-foreground mb-2 flex items-center gap-1">
+              <Dumbbell className="h-3 w-3" /> {restDayDifferent ? 'Training Day' : 'Daily'}
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              <div className="space-y-1"><Label className="text-[10px]">Cal</Label><Input type="number" value={trainingCal} onChange={e => setTrainingCal(e.target.value)} /></div>
+              <div className="space-y-1"><Label className="text-[10px]">Protein</Label><Input type="number" value={trainingP} onChange={e => setTrainingP(e.target.value)} /></div>
+              <div className="space-y-1"><Label className="text-[10px]">Carbs</Label><Input type="number" value={trainingC} onChange={e => setTrainingC(e.target.value)} /></div>
+              <div className="space-y-1"><Label className="text-[10px]">Fats</Label><Input type="number" value={trainingF} onChange={e => setTrainingF(e.target.value)} /></div>
             </div>
           </div>
 
-          {/* Rest Day Toggle */}
           <div className="flex items-center justify-between pt-2 border-t border-border">
-            <Label className="text-sm">Different targets for rest days</Label>
+            <Label className="text-xs">Rest day targets</Label>
             <Switch checked={restDayDifferent} onCheckedChange={setRestDayDifferent} />
           </div>
 
-          {/* Rest Day Targets */}
           {restDayDifferent && (
             <div>
-              <h3 className="text-sm font-semibold mb-3 text-muted-foreground">😴 Rest Day</h3>
-              <div className="grid grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Calories</Label>
-                  <Input type="number" value={restCal} onChange={e => setRestCal(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Protein (g)</Label>
-                  <Input type="number" value={restP} onChange={e => setRestP(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Carbs (g)</Label>
-                  <Input type="number" value={restC} onChange={e => setRestC(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Fats (g)</Label>
-                  <Input type="number" value={restF} onChange={e => setRestF(e.target.value)} />
-                </div>
+              <p className="text-xs text-muted-foreground mb-2">😴 Rest Day</p>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="space-y-1"><Label className="text-[10px]">Cal</Label><Input type="number" value={restCal} onChange={e => setRestCal(e.target.value)} /></div>
+                <div className="space-y-1"><Label className="text-[10px]">Protein</Label><Input type="number" value={restP} onChange={e => setRestP(e.target.value)} /></div>
+                <div className="space-y-1"><Label className="text-[10px]">Carbs</Label><Input type="number" value={restC} onChange={e => setRestC(e.target.value)} /></div>
+                <div className="space-y-1"><Label className="text-[10px]">Fats</Label><Input type="number" value={restF} onChange={e => setRestF(e.target.value)} /></div>
               </div>
             </div>
           )}
 
-          {/* Water & Workout Days */}
-          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2"><Droplets className="h-4 w-4" /> Water Target (ml)</Label>
-              <Input type="number" step="250" value={waterTarget} onChange={e => setWaterTarget(e.target.value)} placeholder="4000" />
+          <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1"><Droplets className="h-3 w-3" /> Water (ml)</Label>
+              <Input type="number" step="250" value={waterTarget} onChange={e => setWaterTarget(e.target.value)} />
             </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2"><Dumbbell className="h-4 w-4" /> Weekly Workout Days</Label>
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1"><Dumbbell className="h-3 w-3" /> Weekly Days</Label>
               <Input type="number" min="1" max="7" value={weeklyWorkoutTarget} onChange={e => setWeeklyWorkoutTarget(e.target.value)} />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Ramadan Mode */}
-      <Card className={ramadanMode ? 'border-primary/50 ring-1 ring-primary/20' : ''}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Moon className="h-5 w-5" /> Ramadan Mode
-            </CardTitle>
+      <div>
+        <p className="section-label">Ramadan Mode</p>
+        <div className={`rounded-2xl bg-card border ${ramadanMode ? 'border-primary/50' : 'border-border'} p-4 mt-2`}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-bold flex items-center gap-2"><Moon className="h-4 w-4" /> Ramadan Mode</span>
             <Switch checked={ramadanMode} onCheckedChange={setRamadanMode} />
           </div>
-        </CardHeader>
-        {ramadanMode && (
-          <CardContent className="space-y-6">
-            <div>
-              <h3 className="font-medium mb-3">Dubai Prayer Times</h3>
+          {ramadanMode && (
+            <div className="space-y-4">
               <div className="grid grid-cols-3 gap-2">
                 {DUBAI_PRAYER_TIMES.map(p => (
-                  <div key={p.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm font-medium">{p.name}</span>
-                    <span className="text-sm text-muted-foreground">{p.time}</span>
+                  <div key={p.name} className="flex items-center justify-between p-2 rounded-lg bg-secondary text-xs">
+                    <span className="font-medium">{p.name}</span>
+                    <span className="text-muted-foreground">{p.time}</span>
                   </div>
                 ))}
               </div>
-            </div>
-            <div>
-              <h3 className="font-medium mb-3">Supplement Timing Shifts</h3>
               <div className="space-y-2">
                 {RAMADAN_SUPPLEMENT_SHIFTS.map(s => (
-                  <div key={s.supplement} className={`flex items-center justify-between p-3 rounded-lg ${s.warning ? 'bg-destructive/10 border border-destructive/30' : 'bg-muted/50'}`}>
-                    <span className="text-sm font-medium">{s.supplement}</span>
-                    <div className="flex items-center gap-2">
-                      {s.warning && <Badge variant="destructive" className="text-xs">⚠️ WITH MEALS ONLY</Badge>}
-                      <span className="text-sm text-muted-foreground">{s.timing}</span>
-                    </div>
+                  <div key={s.supplement} className={`flex items-center justify-between p-2 rounded-lg text-xs ${s.warning ? 'bg-destructive/10 border border-destructive/30' : 'bg-secondary'}`}>
+                    <span className="font-medium">{s.supplement}</span>
+                    <span className="text-muted-foreground">{s.timing}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div>
-              <h3 className="font-medium mb-3">Workout Timing Options</h3>
-              <div className="space-y-2">
-                {RAMADAN_WORKOUT_OPTIONS.map(o => (
-                  <div key={o.label} className="p-3 rounded-lg bg-muted/50">
-                    <div className="font-medium text-sm">{o.label}</div>
-                    <div className="text-xs text-muted-foreground">{o.desc}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="p-4 rounded-lg bg-info/10 border border-info/30">
-              <div className="flex items-center gap-2 mb-2">
-                <Droplets className="h-4 w-4 text-info" />
-                <span className="font-medium text-info">Compressed Hydration</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                4L between Iftar (18:15) and Suhoor (~04:30). That's ~400ml every hour.
-              </p>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+          )}
+        </div>
+      </div>
 
-      {/* AI Coach API Key */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5" /> AI Coach</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Claude API Key</Label>
-            <Input
-              type="password"
-              value={claudeApiKey}
-              onChange={e => setClaudeApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-            />
-            <p className="text-xs text-muted-foreground">Get your key from console.anthropic.com</p>
+      {/* AI Coach */}
+      <div>
+        <p className="section-label">AI Coach</p>
+        <div className="rounded-2xl bg-card border border-border p-4 space-y-3 mt-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Claude API Key</Label>
+            <Input type="password" value={claudeApiKey} onChange={e => setClaudeApiKey(e.target.value)} placeholder="sk-ant-..." />
           </div>
           <div className="flex items-center gap-2">
             {claudeApiKey ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                <span className="text-sm text-green-500 font-medium">Connected</span>
-              </>
+              <><CheckCircle2 className="h-3 w-3 text-primary" /><span className="text-xs text-primary font-medium">Connected</span></>
             ) : (
-              <>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Not configured</span>
-              </>
+              <><AlertCircle className="h-3 w-3 text-muted-foreground" /><span className="text-xs text-muted-foreground">Not configured</span></>
             )}
           </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              localStorage.setItem('claude_api_key', claudeApiKey);
-              toast({ title: 'API key saved! ✅' });
-            }}
-            disabled={!claudeApiKey}
-            size="sm"
-          >
-            Save API Key
+          <Button variant="outline" size="sm" onClick={() => {
+            localStorage.setItem('claude_api_key', claudeApiKey);
+            toast({ title: 'API key saved ✅' });
+          }} disabled={!claudeApiKey}>
+            Save Key
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Button onClick={handleSave} disabled={updateProfile.isPending} className="w-full" size="lg">
+      <Button onClick={handleSave} disabled={updateProfile.isPending} className="w-full rounded-xl" size="lg">
         Save Settings
+      </Button>
+
+      <Button variant="outline" onClick={signOut} className="w-full rounded-xl text-destructive border-destructive/30">
+        <LogOut className="h-4 w-4 mr-2" /> Sign Out
       </Button>
     </div>
   );

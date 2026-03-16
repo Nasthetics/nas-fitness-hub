@@ -1,9 +1,7 @@
 import { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek } from 'date-fns';
-import { Plus, Flame, Beef, Wheat, Droplets, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
+import { format } from 'date-fns';
+import { Plus, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -11,11 +9,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useMealLogs, useCreateMealLog, useCreateMealItem, useFoodDatabase, useProfile, useTodayWorkout } from '@/hooks/use-fitness-data';
-import { MacroDonutChart } from '@/components/nutrition/MacroDonutChart';
 import { MealTemplates } from '@/components/nutrition/MealTemplates';
 import { FoodCategoryTabs } from '@/components/nutrition/FoodCategoryTabs';
 import { NutritionEmptyState } from '@/components/nutrition/NutritionEmptyState';
-import { AdaptiveMacroCard } from '@/components/nutrition/AdaptiveMacroCard';
 import { WaterTracker } from '@/components/nutrition/WaterTracker';
 import { BarcodeScanner } from '@/components/nutrition/BarcodeScanner';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +42,6 @@ export default function Nutrition() {
   const [scannedQty, setScannedQty] = useState('100');
   const [scannedMealId, setScannedMealId] = useState<string | null>(null);
 
-  // Cardio calories for selected date
   const { data: cardioCalories = 0 } = useQuery({
     queryKey: ['cardio-calories', user?.id, dateStr],
     queryFn: async () => {
@@ -62,10 +57,8 @@ export default function Nutrition() {
     enabled: !!user,
   });
 
-  // Determine if today is a training day (match Dashboard logic: default to Training unless explicitly a Rest day)
   const isActualTrainingDay = todayWorkout?.template?.day_type !== 'rest';
 
-  // Calculate daily totals
   const dailyTotals = useMemo(() => {
     return mealLogs.reduce((acc, meal) => {
       const mealTotals =
@@ -79,7 +72,6 @@ export default function Nutrition() {
           }),
           { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 },
         ) || { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 };
-
       return {
         calories: acc.calories + mealTotals.calories,
         protein: acc.protein + mealTotals.protein,
@@ -90,7 +82,6 @@ export default function Nutrition() {
     }, { calories: 0, protein: 0, carbs: 0, fats: 0, fiber: 0 });
   }, [mealLogs]);
 
-  // Get targets based on training/rest day
   const targets = isActualTrainingDay
     ? {
         calories: profile?.training_day_calories || 2556,
@@ -108,28 +99,17 @@ export default function Nutrition() {
   const handleCreateMeal = async (mealName?: string) => {
     const name = mealName || newMealName;
     if (!name.trim()) return;
-    await createMealLog.mutateAsync({
-      meal_name: name,
-      meal_date: dateStr,
-      is_training_day: isTrainingDay,
-    });
+    await createMealLog.mutateAsync({ meal_name: name, meal_date: dateStr, is_training_day: isTrainingDay });
     setNewMealName('');
     setIsAddMealDialogOpen(false);
-  };
-
-  const handleQuickAddMeal = async (mealName: string) => {
-    await handleCreateMeal(mealName);
   };
 
   const handleAddFood = async () => {
     if (!addingToMealId || !selectedFood) return;
     const qty = parseFloat(quantity);
     const multiplier = qty / 100;
-    
     await createMealItem.mutateAsync({
-      meal_log_id: addingToMealId,
-      food_id: selectedFood.id,
-      custom_food_name: null,
+      meal_log_id: addingToMealId, food_id: selectedFood.id, custom_food_name: null,
       quantity_g: qty,
       calories: Math.round(selectedFood.calories_per_100g * multiplier),
       protein: Math.round(selectedFood.protein_per_100g * multiplier * 10) / 10,
@@ -137,11 +117,7 @@ export default function Nutrition() {
       fats: Math.round(selectedFood.fats_per_100g * multiplier * 10) / 10,
       fiber: Math.round((selectedFood.fiber_per_100g || 0) * multiplier * 10) / 10,
     });
-    
-    setAddingToMealId(null);
-    setSelectedFood(null);
-    setQuantity('100');
-    setFoodSearchQuery('');
+    setAddingToMealId(null); setSelectedFood(null); setQuantity('100'); setFoodSearchQuery('');
   };
 
   const handleAddScannedFood = async () => {
@@ -149,9 +125,7 @@ export default function Nutrition() {
     const qty = parseFloat(scannedQty);
     const multiplier = qty / 100;
     await createMealItem.mutateAsync({
-      meal_log_id: scannedMealId,
-      food_id: null,
-      custom_food_name: scannedProduct.name,
+      meal_log_id: scannedMealId, food_id: null, custom_food_name: scannedProduct.name,
       quantity_g: qty,
       calories: Math.round(scannedProduct.calories * multiplier),
       protein: Math.round(scannedProduct.protein * multiplier * 10) / 10,
@@ -159,9 +133,7 @@ export default function Nutrition() {
       fats: Math.round(scannedProduct.fats * multiplier * 10) / 10,
       fiber: 0,
     });
-    setScannedProduct(null);
-    setScannedQty('100');
-    setScannedMealId(null);
+    setScannedProduct(null); setScannedQty('100'); setScannedMealId(null);
   };
 
   const navigateDate = (days: number) => {
@@ -169,6 +141,14 @@ export default function Nutrition() {
     newDate.setDate(newDate.getDate() + days);
     setSelectedDate(newDate);
   };
+
+  // Calorie ring SVG params
+  const ringSize = 180;
+  const sw = 10;
+  const r = (ringSize - sw) / 2;
+  const c = r * 2 * Math.PI;
+  const calPct = Math.min(dailyTotals.calories / targets.calories, 1);
+  const calOff = c - calPct * c;
 
   if (isLoading) {
     return (
@@ -180,25 +160,16 @@ export default function Nutrition() {
 
   return (
     <div className="space-y-6">
-      {/* Header with date navigation */}
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Nutrition</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <Badge variant={isActualTrainingDay ? "default" : "secondary"}>
-              {isActualTrainingDay ? '🏋️ Training Day' : '😴 Rest Day'}
-            </Badge>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-foreground">Nutrition</h1>
         <div className="flex items-center gap-2">
-          <BarcodeScanner onProductScanned={(product) => {
-            setScannedProduct(product);
-          }} />
+          <BarcodeScanner onProductScanned={(product) => setScannedProduct(product)} />
           <Button variant="outline" size="icon" onClick={() => navigateDate(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-medium min-w-[140px] text-center">
-            {format(selectedDate, 'EEE, MMM d')}
+          <span className="text-sm font-medium min-w-[100px] text-center">
+            {format(selectedDate, 'MMM d')}
           </span>
           <Button variant="outline" size="icon" onClick={() => navigateDate(1)}>
             <ChevronRight className="h-4 w-4" />
@@ -206,109 +177,61 @@ export default function Nutrition() {
         </div>
       </div>
 
-      {/* Macro Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Flame className="h-4 w-4 text-orange-500" />
-              <span className="text-sm font-medium">Calories</span>
-            </div>
-            <div className="text-2xl font-bold">{Math.round(dailyTotals.calories)}</div>
-            <Progress 
-              value={Math.min((dailyTotals.calories / targets.calories) * 100, 100)} 
-              className="h-2 mt-2"
-            />
-            <div className="text-xs text-muted-foreground mt-1">
-              / {targets.calories} kcal
-            </div>
-            {cardioCalories > 0 && (
-              <div className="flex items-center gap-1 mt-2 text-xs">
-                <Activity className="h-3 w-3 text-orange-400" />
-                <span className="text-muted-foreground">Burned:</span>
-                <span className="font-medium text-orange-400">{cardioCalories} kcal</span>
-                <span className="text-muted-foreground">from cardio</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Beef className="h-4 w-4 text-red-500" />
-              <span className="text-sm font-medium">Protein</span>
-            </div>
-            <div className="text-2xl font-bold">{Math.round(dailyTotals.protein)}g</div>
-            <Progress 
-              value={Math.min((dailyTotals.protein / targets.protein) * 100, 100)} 
-              className="h-2 mt-2"
-            />
-            <div className="text-xs text-muted-foreground mt-1">
-              / {targets.protein}g
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Wheat className="h-4 w-4 text-amber-500" />
-              <span className="text-sm font-medium">Carbs</span>
-            </div>
-            <div className="text-2xl font-bold">{Math.round(dailyTotals.carbs)}g</div>
-            <Progress 
-              value={Math.min((dailyTotals.carbs / targets.carbs) * 100, 100)} 
-              className="h-2 mt-2"
-            />
-            <div className="text-xs text-muted-foreground mt-1">
-              / {targets.carbs}g
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Droplets className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">Fats</span>
-            </div>
-            <div className="text-2xl font-bold">{Math.round(dailyTotals.fats)}g</div>
-            <Progress 
-              value={Math.min((dailyTotals.fats / targets.fats) * 100, 100)} 
-              className="h-2 mt-2"
-            />
-            <div className="text-xs text-muted-foreground mt-1">
-              / {targets.fats}g
-            </div>
-          </CardContent>
-        </Card>
+      {/* Calorie Ring */}
+      <div className="flex flex-col items-center">
+        <div className="relative" style={{ width: ringSize, height: ringSize }}>
+          <svg width={ringSize} height={ringSize} className="-rotate-90">
+            <circle cx={ringSize/2} cy={ringSize/2} r={r} fill="none" stroke="hsl(var(--secondary))" strokeWidth={sw} />
+            <circle cx={ringSize/2} cy={ringSize/2} r={r} fill="none" stroke="hsl(var(--primary))" strokeWidth={sw} strokeDasharray={c} strokeDashoffset={calOff} strokeLinecap="round" className="transition-all duration-700" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="text-3xl font-bold text-foreground">{Math.round(dailyTotals.calories)}</span>
+            <span className="text-xs text-muted-foreground">/ {targets.calories} kcal</span>
+          </div>
+        </div>
+        <Badge variant={isActualTrainingDay ? "default" : "secondary"} className="mt-2">
+          {isActualTrainingDay ? '🏋️ Training' : '😴 Rest'}
+        </Badge>
       </div>
 
-      {/* Macro Chart + Adaptive Engine + Water + Meal Templates */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MacroDonutChart
-          protein={dailyTotals.protein}
-          carbs={dailyTotals.carbs}
-          fats={dailyTotals.fats}
-          targetCalories={targets.calories}
-          currentCalories={dailyTotals.calories}
-        />
-        <AdaptiveMacroCard />
-        <WaterTracker />
-        <MealTemplates
-          onSelectTemplate={handleQuickAddMeal}
-          onCustomMeal={() => setIsAddMealDialogOpen(true)}
-        />
+      {/* Macro rows */}
+      <div className="space-y-3">
+        {[
+          { label: 'Protein', current: dailyTotals.protein, target: targets.protein, unit: 'g' },
+          { label: 'Carbs', current: dailyTotals.carbs, target: targets.carbs, unit: 'g' },
+          { label: 'Fat', current: dailyTotals.fats, target: targets.fats, unit: 'g' },
+        ].map(macro => (
+          <div key={macro.label} className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground w-16">{macro.label}</span>
+            <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
+              <div 
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${Math.min((macro.current / macro.target) * 100, 100)}%` }}
+              />
+            </div>
+            <span className="text-sm font-bold text-foreground w-20 text-right">
+              {Math.round(macro.current)}/{macro.target}{macro.unit}
+            </span>
+          </div>
+        ))}
       </div>
 
-      {/* Add Meal Sheet */}
-      <div>
-        <Button onClick={() => setIsAddMealDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Meal
-        </Button>
-      </div>
+      {cardioCalories > 0 && (
+        <div className="flex items-center gap-2 text-sm rounded-xl bg-card border border-border p-3">
+          <Activity className="h-4 w-4 text-primary" />
+          <span className="text-muted-foreground">Cardio burned:</span>
+          <span className="font-bold text-primary">{cardioCalories} kcal</span>
+        </div>
+      )}
+
+      {/* Water Tracker */}
+      <WaterTracker />
+
+      {/* Add Meal */}
+      <Button onClick={() => setIsAddMealDialogOpen(true)} className="w-full rounded-xl">
+        <Plus className="h-4 w-4 mr-2" /> Add Meal
+      </Button>
+
       <Sheet open={isAddMealDialogOpen} onOpenChange={setIsAddMealDialogOpen}>
         <SheetContent side="bottom" className="h-[50vh] w-full max-w-[100vw] rounded-t-2xl px-4">
           <div className="flex h-full flex-col">
@@ -318,12 +241,7 @@ export default function Nutrition() {
             <div className="space-y-4 py-2">
               <div className="space-y-2">
                 <Label>Meal Name</Label>
-                <Input
-                  placeholder="e.g., Breakfast, Pre-workout, Dinner"
-                  value={newMealName}
-                  onChange={(e) => setNewMealName(e.target.value)}
-                  className="w-full"
-                />
+                <Input placeholder="e.g., Breakfast, Pre-workout" value={newMealName} onChange={(e) => setNewMealName(e.target.value)} />
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={isTrainingDay} onCheckedChange={setIsTrainingDay} />
@@ -331,26 +249,21 @@ export default function Nutrition() {
               </div>
             </div>
             <div className="mt-auto space-y-2 border-t border-border pt-4 pb-[env(safe-area-inset-bottom,16px)]">
-              <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()} className="w-full">
-                Create Meal
-              </Button>
-              <Button variant="outline" onClick={() => setIsAddMealDialogOpen(false)} className="w-full">
-                Cancel
-              </Button>
+              <Button onClick={() => handleCreateMeal()} disabled={!newMealName.trim()} className="w-full">Create Meal</Button>
+              <Button variant="outline" onClick={() => setIsAddMealDialogOpen(false)} className="w-full">Cancel</Button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* Meals List or Empty State */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Meals</h2>
-        
+      {/* Meal Templates */}
+      <MealTemplates onSelectTemplate={(name) => handleCreateMeal(name)} onCustomMeal={() => setIsAddMealDialogOpen(true)} />
+
+      {/* Meals List */}
+      <div className="space-y-3">
+        <p className="section-label">Today's Meals</p>
         {mealLogs.length === 0 ? (
-          <NutritionEmptyState
-            onAddMeal={() => setIsAddMealDialogOpen(true)}
-            onQuickAdd={handleQuickAddMeal}
-          />
+          <NutritionEmptyState onAddMeal={() => setIsAddMealDialogOpen(true)} onQuickAdd={(name) => handleCreateMeal(name)} />
         ) : (
           mealLogs.map(meal => {
             const mealTotals = meal.meal_items?.reduce((acc, item) => ({
@@ -359,69 +272,39 @@ export default function Nutrition() {
             }), { calories: 0, protein: 0 }) || { calories: 0, protein: 0 };
 
             return (
-              <Card key={meal.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{meal.meal_name}</CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{Math.round(mealTotals.calories)} kcal</span>
-                      <span>{Math.round(mealTotals.protein)}g protein</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setAddingToMealId(meal.id);
-                          setSelectedFood(null);
-                          setFoodSearchQuery('');
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Food
-                      </Button>
-                    </div>
+              <div key={meal.id} className="rounded-xl bg-card border border-border p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-foreground">{meal.meal_name}</span>
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>{Math.round(mealTotals.calories)} kcal</span>
+                    <span>{Math.round(mealTotals.protein)}g P</span>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      setAddingToMealId(meal.id); setSelectedFood(null); setFoodSearchQuery('');
+                    }}>
+                      <Plus className="h-3 w-3 mr-1" /> Add
+                    </Button>
                   </div>
-                </CardHeader>
-                
+                </div>
                 {meal.meal_items && meal.meal_items.length > 0 && (
-                  <CardContent>
-                    <div className="space-y-2">
-                      {meal.meal_items.map(item => (
-                        <div 
-                          key={item.id}
-                          className="flex items-center justify-between py-2 px-3 bg-accent/30 rounded-lg text-sm"
-                        >
-                          <div>
-                            <span className="font-medium">
-                              {item.food?.name || item.custom_food_name}
-                            </span>
-                            <span className="text-muted-foreground ml-2">
-                              {item.quantity_g}g
-                            </span>
-                          </div>
-                          <div className="text-muted-foreground">
-                            {Math.round(item.calories)} kcal • {Math.round(item.protein)}g P
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
+                  <div className="space-y-1">
+                    {meal.meal_items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between py-1.5 px-2 bg-secondary/50 rounded-lg text-xs">
+                        <span className="font-medium">{item.food?.name || item.custom_food_name} <span className="text-muted-foreground">{item.quantity_g}g</span></span>
+                        <span className="text-muted-foreground">{Math.round(item.calories)} kcal</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </Card>
+              </div>
             );
           })
         )}
       </div>
 
-      <Sheet
-        open={!!addingToMealId}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAddingToMealId(null);
-            setSelectedFood(null);
-            setFoodSearchQuery('');
-          }
-        }}
-      >
+      {/* Food picker sheet */}
+      <Sheet open={!!addingToMealId} onOpenChange={(open) => {
+        if (!open) { setAddingToMealId(null); setSelectedFood(null); setFoodSearchQuery(''); }
+      }}>
         <SheetContent side="bottom" className="h-[50vh] w-full max-w-[100vw] rounded-t-2xl px-4">
           <div className="flex h-full flex-col">
             <SheetHeader className="pb-2">
@@ -429,120 +312,73 @@ export default function Nutrition() {
                 Add Food to {mealLogs.find((m) => m.id === addingToMealId)?.meal_name || 'Meal'}
               </SheetTitle>
             </SheetHeader>
-
             <div className="flex-1 overflow-y-auto py-2 pr-1">
               {!selectedFood ? (
-                <FoodCategoryTabs
-                  foods={foods}
-                  searchQuery={foodSearchQuery}
-                  onSearchChange={setFoodSearchQuery}
-                  onSelectFood={setSelectedFood}
-                />
+                <FoodCategoryTabs foods={foods} searchQuery={foodSearchQuery} onSearchChange={setFoodSearchQuery} onSelectFood={setSelectedFood} />
               ) : (
-                <div className="space-y-4">
-                  <div className="rounded-lg bg-accent/50 p-4">
-                    <div className="font-medium">{selectedFood.name}</div>
-                    <div className="mt-1 text-sm text-muted-foreground">
-                      {selectedFood.calories_per_100g} kcal per 100g
+                <div className="space-y-4 animate-in">
+                  <div className="p-4 rounded-xl bg-secondary/50">
+                    <div className="font-bold text-lg">{selectedFood.name}</div>
+                    <div className="grid grid-cols-4 gap-2 mt-2 text-xs text-muted-foreground">
+                      <div>{selectedFood.calories_per_100g} kcal</div>
+                      <div>{selectedFood.protein_per_100g}g P</div>
+                      <div>{selectedFood.carbs_per_100g}g C</div>
+                      <div>{selectedFood.fats_per_100g}g F</div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">per 100g</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Quantity (grams)</Label>
-                    <Input
-                      type="number"
-                      value={quantity}
-                      onChange={(e) => setQuantity(e.target.value)}
-                      min="1"
-                      className="w-full"
-                    />
+                    <Input type="number" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="text-center text-lg font-bold" />
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    = {Math.round(selectedFood.calories_per_100g * parseFloat(quantity || '0') / 100)} kcal,{' '}
-                    {Math.round(selectedFood.protein_per_100g * parseFloat(quantity || '0') / 100 * 10) / 10}g protein
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1" onClick={() => setSelectedFood(null)}>Back</Button>
+                    <Button className="flex-1" onClick={handleAddFood}>Add</Button>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedFood(null)}>
-                    ← Choose different food
-                  </Button>
                 </div>
               )}
-            </div>
-
-            <div className="mt-auto space-y-2 border-t border-border pt-4 pb-[env(safe-area-inset-bottom,16px)]">
-              <Button onClick={handleAddFood} disabled={!selectedFood || !quantity} className="w-full">
-                Add Food
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAddingToMealId(null);
-                  setSelectedFood(null);
-                  setFoodSearchQuery('');
-                }}
-                className="w-full"
-              >
-                Cancel
-              </Button>
             </div>
           </div>
         </SheetContent>
       </Sheet>
 
-      {/* Scanned Product Dialog */}
-      <Dialog open={!!scannedProduct} onOpenChange={(v) => { if (!v) setScannedProduct(null); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Scanned Product</DialogTitle>
-          </DialogHeader>
-          {scannedProduct && (
-            <div className="space-y-4 py-4">
-              <div className="p-4 bg-accent/50 rounded-lg">
-                <div className="font-medium text-lg">{scannedProduct.name}</div>
-                <div className="grid grid-cols-4 gap-2 mt-2 text-sm text-muted-foreground">
-                  <div><span className="font-medium text-foreground">{scannedProduct.calories}</span> kcal</div>
-                  <div><span className="font-medium text-foreground">{scannedProduct.protein}g</span> P</div>
-                  <div><span className="font-medium text-foreground">{scannedProduct.carbs}g</span> C</div>
-                  <div><span className="font-medium text-foreground">{scannedProduct.fats}g</span> F</div>
+      {/* Scanned food sheet */}
+      <Sheet open={!!scannedProduct} onOpenChange={(open) => { if (!open) setScannedProduct(null); }}>
+        <SheetContent side="bottom" className="h-[50vh] w-full max-w-[100vw] rounded-t-2xl px-4">
+          <div className="flex h-full flex-col">
+            <SheetHeader className="pb-2"><SheetTitle className="text-left">Scanned Product</SheetTitle></SheetHeader>
+            {scannedProduct && (
+              <div className="space-y-4 py-2">
+                <div className="p-4 rounded-xl bg-secondary/50">
+                  <div className="font-bold text-lg">{scannedProduct.name}</div>
+                  <div className="grid grid-cols-4 gap-2 mt-2 text-xs text-muted-foreground">
+                    <div>{scannedProduct.calories} kcal</div>
+                    <div>{scannedProduct.protein}g P</div>
+                    <div>{scannedProduct.carbs}g C</div>
+                    <div>{scannedProduct.fats}g F</div>
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">per 100g</div>
-              </div>
-              <div className="space-y-2">
-                <Label>Quantity (grams)</Label>
-                <Input type="number" value={scannedQty} onChange={(e) => setScannedQty(e.target.value)} min="1" />
-              </div>
-              <div className="text-sm text-muted-foreground">
-                = {Math.round(scannedProduct.calories * parseFloat(scannedQty || '0') / 100)} kcal, {' '}
-                {Math.round(scannedProduct.protein * parseFloat(scannedQty || '0') / 100 * 10) / 10}g protein
-              </div>
-              {mealLogs.length > 0 ? (
+                <div className="space-y-2">
+                  <Label>Quantity (grams)</Label>
+                  <Input type="number" value={scannedQty} onChange={(e) => setScannedQty(e.target.value)} />
+                </div>
                 <div className="space-y-2">
                   <Label>Add to meal</Label>
-                  <div className="grid gap-2">
-                    {mealLogs.map(meal => (
-                      <Button
-                        key={meal.id}
-                        variant={scannedMealId === meal.id ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setScannedMealId(meal.id)}
-                        className="justify-start"
-                      >
-                        {meal.meal_name}
+                  <div className="flex flex-wrap gap-2">
+                    {mealLogs.map(m => (
+                      <Button key={m.id} variant={scannedMealId === m.id ? 'default' : 'outline'} size="sm"
+                        onClick={() => setScannedMealId(m.id)}>
+                        {m.meal_name}
                       </Button>
                     ))}
                   </div>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Create a meal first to add this food.</p>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-            <Button onClick={handleAddScannedFood} disabled={!scannedMealId || !scannedProduct}>
-              Add to Meal
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                <Button className="w-full" disabled={!scannedMealId} onClick={handleAddScannedFood}>Add to Meal</Button>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

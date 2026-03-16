@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Dumbbell, UtensilsCrossed, TrendingUp, LayoutGrid } from 'lucide-react';
+import { Home, Dumbbell, BookOpen, UtensilsCrossed, TrendingUp, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { MoreDrawer } from './MoreDrawer';
@@ -7,9 +7,9 @@ import { MoreDrawer } from './MoreDrawer';
 const tabs = [
   { label: 'Home', icon: Home, path: '/' },
   { label: 'Workout', icon: Dumbbell, path: '/workouts' },
+  { label: 'Exercises', icon: BookOpen, path: '/exercises' },
   { label: 'Nutrition', icon: UtensilsCrossed, path: '/nutrition' },
   { label: 'Progress', icon: TrendingUp, path: '/progress' },
-  { label: 'More', icon: LayoutGrid, path: '__more__' },
 ];
 
 interface BottomTabNavProps {
@@ -33,18 +33,12 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
       >
         <div className="flex items-center justify-around" style={{ height: 64 }}>
           {tabs.map((tab) => {
-            const isActive = tab.path !== '__more__' && location.pathname === tab.path;
+            const isActive = location.pathname === tab.path;
             const Icon = tab.icon;
             return (
               <button
                 key={tab.label}
-                onClick={() => {
-                  if (tab.path === '__more__') {
-                    setMoreOpen(true);
-                  } else {
-                    navigate(tab.path);
-                  }
-                }}
+                onClick={() => navigate(tab.path)}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px] transition-colors",
                   isActive ? "text-primary" : "text-muted-foreground"

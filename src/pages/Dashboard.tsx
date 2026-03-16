@@ -1,17 +1,10 @@
 import { useState, useMemo } from 'react';
-import { format, startOfWeek, endOfWeek, subDays } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Dumbbell, Pill, Scale, Flame, Zap, Droplets,
-  Heart, Apple, ChevronRight, Clock, Pencil
-} from 'lucide-react';
+import { format, startOfWeek, endOfWeek, addDays, subDays } from 'date-fns';
+import { Dumbbell, Apple, BarChart3, ChevronRight, Clock, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { 
   useTodayWorkout, useWorkoutLogs, useMealLogs, useWorkoutTemplates,
-  useSupplements, useSupplementLogs, useBodyMetrics, useProfile
+  useSupplements, useSupplementLogs, useProfile
 } from '@/hooks/use-fitness-data';
 import { WORKOUT_DAY_INFO, type WorkoutDayType } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { DeloadBanner } from '@/components/workouts/DeloadBanner';
 import { TargetEditModal } from '@/components/dashboard/TargetEditModal';
+import { Button } from '@/components/ui/button';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -30,44 +24,8 @@ export default function Dashboard() {
   const { data: todayWorkout } = useTodayWorkout();
   const { data: weeklyWorkouts } = useWorkoutLogs(weekStart, weekEnd);
   const { data: todayMeals } = useMealLogs(today);
-  const { data: supplements } = useSupplements();
-  const { data: supplementLogs } = useSupplementLogs(today);
-  const { data: bodyMetrics } = useBodyMetrics(30);
   const { data: profile } = useProfile();
   const { data: templates } = useWorkoutTemplates();
-
-  // Water today
-  const { data: waterLogs = [] } = useQuery({
-    queryKey: ['water-logs', user?.id, today],
-    queryFn: async () => {
-      if (!user) return [];
-      const { data, error } = await supabase
-        .from('water_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('log_date', today);
-      if (error) return [];
-      return data || [];
-    },
-    enabled: !!user,
-  });
-  const waterMl = waterLogs.reduce((s: number, l: any) => s + (l.amount_ml || 0), 0);
-
-  // Recovery score today
-  const { data: todayRecovery } = useQuery({
-    queryKey: ['recovery-today', user?.id, today],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
-        .from('recovery_checkins')
-        .select('recovery_score')
-        .eq('user_id', user.id)
-        .eq('checkin_date', today)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!user,
-  });
 
   // Workout streak
   const { data: allWorkouts = [] } = useQuery({
@@ -90,10 +48,8 @@ export default function Dashboard() {
     if (allWorkouts.length === 0) return 0;
     let count = 0;
     let checkDate = new Date();
-    // If no workout today, start from yesterday
     const todayHasWorkout = allWorkouts.some(w => w.workout_date === format(checkDate, 'yyyy-MM-dd'));
     if (!todayHasWorkout) checkDate = subDays(checkDate, 1);
-    
     const dates = new Set(allWorkouts.map(w => w.workout_date));
     while (dates.has(format(checkDate, 'yyyy-MM-dd'))) {
       count++;
@@ -104,12 +60,6 @@ export default function Dashboard() {
 
   const isTrainingDay = todayWorkout?.template?.day_type !== 'rest';
   const targetCalories = isTrainingDay ? (profile?.training_day_calories || 2556) : (profile?.rest_day_calories || 2556);
-  const targetProtein = isTrainingDay ? (profile?.training_day_protein || 245) : (profile?.rest_day_protein || 245);
-  const waterTarget = profile?.water_target_ml || 4000;
-  const weeklyWorkoutTarget = profile?.weekly_workout_target || 5;
-
-  // Target edit modals
-  const [editTarget, setEditTarget] = useState<{ label: string; unit: string; value: number; field: string; step?: number; min?: number; max?: number } | null>(null);
 
   const nutritionStats = useMemo(() => {
     if (!todayMeals) return { calories: 0, protein: 0, carbs: 0, fats: 0 };
@@ -124,92 +74,158 @@ export default function Dashboard() {
     }, { calories: 0, protein: 0, carbs: 0, fats: 0 });
   }, [todayMeals]);
 
-  const activeSupps = supplements?.filter(s => s.is_active) || [];
-  const takenCount = supplementLogs?.filter(l => l.taken).length || 0;
-  const workoutDone = todayWorkout?.completed || false;
+  const weeklyCompletedCount = weeklyWorkouts?.filter(w => w.completed).length || 0;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const displayName = profile?.display_name || 'Nas';
+  const initials = displayName.charAt(0).toUpperCase();
 
-  const recoveryScore = todayRecovery?.recovery_score || 0;
-  const recoveryColor = recoveryScore >= 85 ? 'text-green-500' : recoveryScore >= 65 ? 'text-yellow-500' : recoveryScore >= 40 ? 'text-orange-500' : 'text-red-500';
-  const recoveryBg = recoveryScore >= 85 ? 'bg-green-500/10' : recoveryScore >= 65 ? 'bg-yellow-500/10' : recoveryScore >= 40 ? 'bg-orange-500/10' : 'bg-red-500/10';
-
-  // Today's template (for daily brief)
+  // Today's template
   const todayDayNumber = new Date().getDay() === 0 ? 7 : new Date().getDay();
   const todayTemplate = templates?.find(t => t.day_number === todayDayNumber);
-  const todayMuscles = todayTemplate ? WORKOUT_DAY_INFO[todayTemplate.day_type as WorkoutDayType]?.muscles || [] : [];
+  const todayDayInfo = todayTemplate ? WORKOUT_DAY_INFO[todayTemplate.day_type as WorkoutDayType] : null;
+  const isRestDay = todayTemplate?.day_type === 'rest';
 
-  // Nutrition remaining
-  const caloriesRemaining = Math.max(0, targetCalories - Math.round(nutritionStats.calories));
-  const calColor = caloriesRemaining > 500 ? 'text-green-400' : caloriesRemaining > 200 ? 'text-yellow-400' : 'text-red-400';
+  // Week day pills
+  const weekStartDate = startOfWeek(new Date(), { weekStartsOn: 1 });
+  const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const todayIdx = (new Date().getDay() + 6) % 7; // 0=Mon
+  const [selectedDayIdx, setSelectedDayIdx] = useState(todayIdx);
 
-  // Next supplement due
-  const nextSupplement = useMemo(() => {
-    const untaken = activeSupps.filter(s => {
-      const log = supplementLogs?.find(l => l.supplement_id === s.id);
-      return !log?.taken;
-    });
-    return untaken[0] || null;
-  }, [activeSupps, supplementLogs]);
+  const selectedDayNumber = selectedDayIdx + 1;
+  const selectedTemplate = templates?.find(t => t.day_number === selectedDayNumber);
+  const selectedDayInfo = selectedTemplate ? WORKOUT_DAY_INFO[selectedTemplate.day_type as WorkoutDayType] : null;
 
-  // Progress ring helper with edit
-  const Ring = ({ value, max, size = 80, color, label, subtext, onEdit }: { value: number; max: number; size?: number; color: string; label: string; subtext?: string; onEdit?: () => void }) => {
-    const sw = 6;
-    const r = (size - sw) / 2;
-    const c = r * 2 * Math.PI;
-    const pct = Math.min(value / max, 1);
-    const off = c - pct * c;
-    return (
-      <div className="flex flex-col items-center gap-0.5">
-        <div className="relative" style={{ width: size, height: size }}>
-          <svg width={size} height={size} className="-rotate-90">
-            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--muted))" strokeWidth={sw} />
-            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="hsl(var(--primary))" strokeWidth={sw} strokeDasharray={c} strokeDashoffset={off} strokeLinecap="round" className="transition-all duration-700" />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm font-bold">{Math.round(pct * 100)}%</span>
-          </div>
-        </div>
-        <span className="text-xs text-muted-foreground">{label}</span>
-        {!isTrainingDay && label === 'Calories' && (
-          <Badge variant="outline" className="text-[8px] px-1 py-0">Rest Day</Badge>
-        )}
-        {subtext && (
-          <span className="text-[10px] text-muted-foreground">{subtext}</span>
-        )}
-        {onEdit && (
-          <button onClick={onEdit} className="text-muted-foreground hover:text-primary transition-colors">
-            <Pencil className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-    );
-  };
+  // Target edit
+  const [editTarget, setEditTarget] = useState<any>(null);
 
   return (
     <div className="space-y-6 animate-in">
-      {/* Greeting */}
-      <div>
-        <h1 className="text-3xl font-bold">{greeting}, {profile?.display_name || 'Nas'} 💪</h1>
-        <p className="text-muted-foreground">{format(new Date(), 'EEEE, MMMM d, yyyy')}</p>
+      {/* Header: greeting + avatar */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">{greeting}</p>
+          <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground font-bold text-sm">
+          {initials}
+        </div>
       </div>
 
       {/* Deload Banner */}
       <DeloadBanner />
 
-      {/* 5 Progress Rings */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-around flex-wrap gap-4">
-            <Ring value={nutritionStats.calories} max={targetCalories} color="#f97316" label="Calories" subtext={`${Math.round(nutritionStats.calories)} / ${targetCalories} kcal`} onEdit={() => setEditTarget({ label: 'Calories', unit: 'kcal', value: targetCalories, field: isTrainingDay ? 'training_day_calories' : 'rest_day_calories', step: 50 })} />
-            <Ring value={nutritionStats.protein} max={targetProtein} color="#ef4444" label="Protein" subtext={`${Math.round(nutritionStats.protein)} / ${targetProtein} g`} onEdit={() => setEditTarget({ label: 'Protein', unit: 'grams', value: targetProtein, field: isTrainingDay ? 'training_day_protein' : 'rest_day_protein', step: 5 })} />
-            <Ring value={waterMl} max={waterTarget} color="#3b82f6" label="Water" subtext={`${(waterMl / 1000).toFixed(1)} / ${waterTarget / 1000} L`} onEdit={() => setEditTarget({ label: 'Water', unit: 'ml', value: waterTarget, field: 'water_target_ml', step: 250 })} />
-            <Ring value={takenCount} max={activeSupps.length || 1} color="#a855f7" label="Supps" subtext={`${takenCount} / ${activeSupps.length}`} />
-            <Ring value={workoutDone ? 1 : 0} max={1} color="#22c55e" label="Workout" subtext={`${(weeklyWorkouts?.filter(w => w.completed).length || 0)} / ${weeklyWorkoutTarget} days`} />
+      {/* 3 stat chips */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-2xl bg-card border border-border p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{streak}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Day Streak</p>
+        </div>
+        <div className="rounded-2xl bg-card border border-border p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{weeklyCompletedCount}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">This Week</p>
+        </div>
+        <div className="rounded-2xl bg-card border border-border p-4 text-center">
+          <p className="text-2xl font-bold text-foreground">{Math.round(nutritionStats.calories)}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Calories</p>
+        </div>
+      </div>
+
+      {/* TODAY WORKOUT CARD */}
+      <div 
+        className="rounded-2xl bg-primary text-primary-foreground p-5 cursor-pointer"
+        onClick={() => navigate('/workouts')}
+      >
+        <p className="text-[10px] uppercase tracking-widest font-semibold opacity-70 mb-1">Today</p>
+        <h2 className="text-xl font-bold">
+          {isRestDay ? '😴 Rest Day' : todayDayInfo?.label || 'No Plan Set'}
+        </h2>
+        {!isRestDay && todayDayInfo && (
+          <div className="flex items-center gap-4 mt-2 text-sm opacity-80">
+            <span className="flex items-center gap-1">
+              <Dumbbell className="h-3.5 w-3.5" />
+              {todayDayInfo.muscles?.length || 0} muscle groups
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              ~60 min
+            </span>
           </div>
-        </CardContent>
-      </Card>
+        )}
+        {!isRestDay && (
+          <div className="mt-3">
+            <span className="inline-flex items-center gap-2 rounded-xl bg-primary-foreground text-primary px-4 py-2 text-sm font-bold">
+              {todayWorkout?.completed ? '✅ Completed' : 'Start Workout'}
+              <ChevronRight className="h-4 w-4" />
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* THIS WEEK - day pills */}
+      <div>
+        <p className="section-label">This Week</p>
+        <div className="flex gap-2 mt-2">
+          {dayLabels.map((label, i) => {
+            const isActive = i === selectedDayIdx;
+            return (
+              <button
+                key={i}
+                onClick={() => setSelectedDayIdx(i)}
+                className={`flex-1 h-10 rounded-full text-sm font-bold transition-colors ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-secondary text-muted-foreground'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {selectedDayInfo && (
+          <p className="text-sm text-muted-foreground mt-2">
+            {selectedTemplate?.day_type === 'rest' ? '😴 Rest Day' : selectedDayInfo.label}
+            {selectedDayInfo.muscles && selectedDayInfo.muscles.length > 0 && (
+              <span className="ml-2 text-primary">
+                {selectedDayInfo.muscles.join(' • ')}
+              </span>
+            )}
+          </p>
+        )}
+        {!selectedDayInfo && (
+          <p className="text-sm text-muted-foreground mt-2">No workout planned</p>
+        )}
+      </div>
+
+      {/* QUICK ACTIONS */}
+      <div>
+        <p className="section-label">Quick Actions</p>
+        <div className="grid grid-cols-3 gap-3 mt-2">
+          <button
+            onClick={() => navigate('/workouts')}
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 transition-colors hover:border-primary/40"
+          >
+            <Dumbbell className="h-6 w-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">Log Workout</span>
+          </button>
+          <button
+            onClick={() => navigate('/nutrition')}
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 transition-colors hover:border-primary/40"
+          >
+            <Apple className="h-6 w-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">Add Meal</span>
+          </button>
+          <button
+            onClick={() => navigate('/progress')}
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 transition-colors hover:border-primary/40"
+          >
+            <BarChart3 className="h-6 w-6 text-primary" />
+            <span className="text-xs font-semibold text-foreground">Progress</span>
+          </button>
+        </div>
+      </div>
 
       {/* Target Edit Modal */}
       {editTarget && (
@@ -223,258 +239,6 @@ export default function Dashboard() {
           step={editTarget.step}
         />
       )}
-
-      {/* Recovery Score + Today's Workout */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="pt-6 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-muted">
-              <Heart className={`h-8 w-8 ${recoveryColor}`} />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Recovery Score</p>
-              <p className={`text-3xl font-bold ${recoveryColor}`}>
-                {todayRecovery ? recoveryScore : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {!todayRecovery ? 'No check-in today' : 
-                  recoveryScore >= 85 ? 'Push Hard 🔥' : 
-                  recoveryScore >= 65 ? 'Normal Session' : 
-                  recoveryScore >= 40 ? 'Reduce Volume 20%' : 'Active Recovery Only'}
-              </p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => navigate('/recovery')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-primary/20">
-          <CardContent className="pt-6 flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-              <Dumbbell className="h-8 w-8 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Today's Workout</p>
-              {todayWorkout?.template ? (
-                <>
-                  <p className="text-lg font-bold">
-                    {WORKOUT_DAY_INFO[todayWorkout.template.day_type as WorkoutDayType]?.label || 'Workout'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {todayWorkout.completed ? '✅ Completed' : `${todayWorkout.exercise_logs?.length || 0} exercises`}
-                  </p>
-                </>
-              ) : (
-                <p className="text-lg font-semibold text-muted-foreground">No workout planned</p>
-              )}
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => navigate('/workouts')}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions - Large visible cards */}
-      <div className="grid grid-cols-3 gap-3">
-        <button
-          onClick={() => navigate('/workouts')}
-          className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-4 min-w-[80px] min-h-[72px] transition-colors hover:border-primary/40"
-        >
-          <Dumbbell className="h-7 w-7 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Log Workout</span>
-        </button>
-        <button
-          onClick={() => navigate('/nutrition')}
-          className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-4 min-w-[80px] min-h-[72px] transition-colors hover:border-primary/40"
-        >
-          <Apple className="h-7 w-7 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Add Meal</span>
-        </button>
-        <button
-          onClick={() => navigate('/progress')}
-          className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-4 min-w-[80px] min-h-[72px] transition-colors hover:border-primary/40"
-        >
-          <Scale className="h-7 w-7 text-primary" />
-          <span className="text-xs font-semibold text-foreground">Log Weight</span>
-        </button>
-      </div>
-
-      {/* Daily Brief — 2x2 grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Today's Workout Plan */}
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/workouts')}>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Dumbbell className="h-4 w-4 text-primary" />
-              <span className="text-xs font-medium">Today's Plan</span>
-            </div>
-            {todayTemplate && todayTemplate.day_type !== 'rest' ? (
-              <>
-                <p className="text-sm font-bold">{WORKOUT_DAY_INFO[todayTemplate.day_type as WorkoutDayType]?.label}</p>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {todayMuscles.slice(0, 3).map(m => (
-                    <Badge key={m} variant="outline" className="text-[9px] px-1 py-0">{m}</Badge>
-                  ))}
-                </div>
-              </>
-            ) : todayTemplate?.day_type === 'rest' ? (
-              <p className="text-sm text-muted-foreground">😴 Rest Day</p>
-            ) : (
-              <Button variant="link" className="p-0 h-auto text-xs text-primary" onClick={(e) => { e.stopPropagation(); navigate('/workouts'); }}>
-                Set Up Routine →
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Supplement Alert */}
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/supplements')}>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Pill className="h-4 w-4 text-purple-500" />
-              <span className="text-xs font-medium">Next Supplement</span>
-            </div>
-            {nextSupplement ? (
-              <>
-                <p className="text-sm font-bold">{nextSupplement.name}</p>
-                <p className="text-[10px] text-muted-foreground">
-                  {nextSupplement.timing?.map(t => t === 'AM' ? 'Morning' : t === 'PM' ? 'Evening' : t.replace('_', ' ')).join(', ') || 'Anytime'}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-green-400">✅ All taken!</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Nutrition Status */}
-        <Card className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate('/nutrition')}>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Flame className="h-4 w-4 text-orange-500" />
-              <span className="text-xs font-medium">Calories Left</span>
-            </div>
-            <p className={`text-xl font-bold ${calColor}`}>{caloriesRemaining}</p>
-            <p className="text-[10px] text-muted-foreground">kcal remaining</p>
-          </CardContent>
-        </Card>
-
-        {/* Streak */}
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-base">🔥</span>
-              <span className="text-xs font-medium">Streak</span>
-            </div>
-            {streak > 0 ? (
-              <>
-                <p className="text-xl font-bold">{streak}</p>
-                <p className="text-[10px] text-muted-foreground">consecutive days</p>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground">Start your streak today!</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Daily Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Flame className="h-3 w-3 text-orange-500" />
-              <span className="text-xs font-medium">Calories</span>
-            </div>
-            <div className="text-xl font-bold">{Math.round(nutritionStats.calories)}</div>
-            <Progress value={Math.min((nutritionStats.calories / targetCalories) * 100, 100)} className="h-1.5 mt-2" />
-            <span className="text-[10px] text-muted-foreground">/ {targetCalories}</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap className="h-3 w-3 text-red-500" />
-              <span className="text-xs font-medium">Protein</span>
-            </div>
-            <div className="text-xl font-bold">{Math.round(nutritionStats.protein)}g</div>
-            <Progress value={Math.min((nutritionStats.protein / targetProtein) * 100, 100)} className="h-1.5 mt-2" />
-            <span className="text-[10px] text-muted-foreground">/ {targetProtein}g</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Droplets className="h-3 w-3 text-blue-500" />
-              <span className="text-xs font-medium">Water</span>
-            </div>
-            <div className="text-xl font-bold">{(waterMl / 1000).toFixed(1)}L</div>
-            <Progress value={Math.min((waterMl / waterTarget) * 100, 100)} className="h-1.5 mt-2" />
-            <span className="text-[10px] text-muted-foreground">/ {waterTarget / 1000}L</span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Dumbbell className="h-3 w-3 text-primary" />
-              <span className="text-xs font-medium">Weekly</span>
-            </div>
-            <div className="text-xl font-bold">
-              {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
-            </div>
-            <Progress 
-              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / weeklyWorkoutTarget) * 100} 
-              className="h-1.5 mt-2" 
-            />
-            <span className="text-[10px] text-muted-foreground">workouts</span>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Weight + Weekly Training */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Scale className="h-4 w-4" />
-              Latest Weight
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {bodyMetrics?.[0]?.weight_kg ? (
-              <div>
-                <span className="text-3xl font-bold">{bodyMetrics[0].weight_kg} kg</span>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {format(new Date(bodyMetrics[0].recorded_date), 'MMM d, yyyy')}
-                </p>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No weight data yet</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Dumbbell className="h-4 w-4" />
-              Weekly Training
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {weeklyWorkouts?.filter(w => w.completed).length || 0}/{weeklyWorkoutTarget}
-            </div>
-            <Progress 
-              value={((weeklyWorkouts?.filter(w => w.completed).length || 0) / weeklyWorkoutTarget) * 100} 
-              className="h-2 mt-2" 
-            />
-            <p className="text-sm text-muted-foreground mt-1">workouts this week</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
