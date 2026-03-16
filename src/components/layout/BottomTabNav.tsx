@@ -26,7 +26,7 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-card/95 bg-card border-t border-border"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-[hsl(0,0%,5%)] border-t border-border backdrop-blur"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         }}
@@ -45,11 +45,13 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
                     navigate(tab.path);
                   }
                 }}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px] transition-colors"
-                style={{ color: isActive ? 'hsl(var(--info))' : 'hsl(var(--muted-foreground))' }}
+                className={cn(
+                  "flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px] transition-colors",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}
               >
                 <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
-                <span className="text-[10px] font-medium">{tab.label}</span>
+                <span className={cn("text-[10px]", isActive ? "font-bold" : "font-medium")}>{tab.label}</span>
               </button>
             );
           })}
