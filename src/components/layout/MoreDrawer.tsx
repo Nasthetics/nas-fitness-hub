@@ -1,16 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { 
-  BookOpen, Pill, Heart, Calendar, Bot, FileText, Settings, LogOut,
+  Pill, Heart, Calendar, Bot, FileText, Settings,
   Activity, ShoppingCart
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const moreItems = [
   { label: 'Cardio', icon: Activity, path: '/cardio' },
   { label: 'Groceries', icon: ShoppingCart, path: '/groceries' },
-  { label: 'Exercises', icon: BookOpen, path: '/exercises' },
   { label: 'Supplements', icon: Pill, path: '/supplements' },
   { label: 'Recovery', icon: Heart, path: '/recovery' },
   { label: 'Periodization', icon: Calendar, path: '/periodization' },
@@ -26,7 +24,6 @@ interface MoreDrawerProps {
 
 export function MoreDrawer({ open, onOpenChange }: MoreDrawerProps) {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -44,23 +41,13 @@ export function MoreDrawer({ open, onOpenChange }: MoreDrawerProps) {
                   navigate(item.path);
                   onOpenChange(false);
                 }}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors min-h-[80px] justify-center"
+                className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-muted transition-colors min-h-[80px] justify-center"
               >
-                <Icon className="h-5 w-5 text-info" />
+                <Icon className="h-5 w-5 text-primary" />
                 <span className="text-xs font-medium text-foreground">{item.label}</span>
               </button>
             );
           })}
-          <button
-            onClick={() => {
-              signOut();
-              onOpenChange(false);
-            }}
-            className="flex flex-col items-center gap-2 p-4 rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors min-h-[80px] justify-center"
-          >
-            <LogOut className="h-5 w-5 text-destructive" />
-            <span className="text-xs font-medium text-destructive">Sign Out</span>
-          </button>
         </div>
       </SheetContent>
     </Sheet>
