@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { BottomTabNav } from './BottomTabNav';
 import { ThemeToggle } from './ThemeToggle';
 import { useState, createContext, useContext, useEffect } from 'react';
@@ -21,6 +21,7 @@ export function AppLayout() {
   const [isWorkoutMode, setIsWorkoutMode] = useState(false);
   const { theme } = useTheme();
   const bannerVisible = useInstallBannerVisible();
+  const location = useLocation();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -38,8 +39,13 @@ export function AppLayout() {
             <ThemeToggle />
           </div>
         )}
-        <main className={`flex-1 overflow-auto ${isWorkoutMode ? '' : 'p-4 md:p-6'} ${!isWorkoutMode ? 'pb-24' : ''}`}
-          style={{ paddingBottom: isWorkoutMode ? undefined : 'calc(80px + env(safe-area-inset-bottom, 0px))' }}
+        <main
+          key={location.pathname}
+          className={`flex-1 overflow-auto ${isWorkoutMode ? '' : 'p-4 md:p-6'} ${!isWorkoutMode ? 'pb-24' : ''}`}
+          style={{
+            paddingBottom: isWorkoutMode ? undefined : 'calc(80px + env(safe-area-inset-bottom, 0px))',
+            animation: 'slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          }}
         >
           <Outlet />
         </main>
