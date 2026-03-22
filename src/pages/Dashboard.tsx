@@ -196,21 +196,18 @@ export default function Dashboard() {
           iconBg="bg-orange-500/15"
           value={streak}
           label="Day Streak"
-          delay="animate-delay-100"
         />
         <StatCard
           icon={<CalendarDays className="h-4 w-4 text-blue-400" />}
           iconBg="bg-blue-500/15"
           value={weeklyCompletedCount}
           label="This Week"
-          delay="animate-delay-150"
         />
         <StatCard
           icon={<Zap className="h-4 w-4 text-primary" />}
           iconBg="bg-primary/15"
           value={Math.round(nutritionStats.calories)}
           label="Kcal Today"
-          delay="animate-delay-200"
         />
       </div>
 
@@ -417,17 +414,16 @@ export default function Dashboard() {
 // ── Sub-components ───────────────────────────────────────────
 
 function StatCard({
-  icon, iconBg, value, label, delay,
+  icon, iconBg, value, label,
 }: {
   icon: React.ReactNode;
   iconBg: string;
   value: number;
   label: string;
-  delay: string;
 }) {
   const displayValue = useCountUp(value, 800);
   return (
-    <div className={`rounded-2xl bg-card border border-border p-4 flex flex-col gap-2 card-hover animate-slide-up-far ${delay}`}>
+    <div className="rounded-2xl bg-card border border-border p-4 flex flex-col gap-2 card-hover">
       <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconBg}`}>
         {icon}
       </div>
