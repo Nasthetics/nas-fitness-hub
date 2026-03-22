@@ -5,11 +5,11 @@ import { useState } from 'react';
 import { MoreDrawer } from './MoreDrawer';
 
 const tabs = [
-  { label: 'Home', icon: Home, path: '/' },
-  { label: 'Workout', icon: Dumbbell, path: '/workouts' },
-  { label: 'Exercises', icon: BookOpen, path: '/exercises' },
+  { label: 'Home',      icon: Home,            path: '/' },
+  { label: 'Workout',   icon: Dumbbell,        path: '/workouts' },
+  { label: 'Exercises', icon: BookOpen,         path: '/exercises' },
   { label: 'Nutrition', icon: UtensilsCrossed, path: '/nutrition' },
-  { label: 'Progress', icon: TrendingUp, path: '/progress' },
+  { label: 'Progress',  icon: TrendingUp,      path: '/progress' },
 ];
 
 interface BottomTabNavProps {
@@ -27,17 +27,29 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
   return (
     <>
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-border backdrop-blur-xl"
+        className="fixed bottom-0 left-0 right-0 z-50"
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          background: 'hsl(0 0% 5% / 0.92)',
+          background: 'hsl(0 0% 4% / 0.94)',
+          borderTop: '1px solid hsl(0 0% 13%)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
         }}
       >
-        <div className="flex items-center justify-around" style={{ height: 64 }}>
+        {/* Top accent line that glows on active */}
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{
+            background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.4), transparent)',
+          }}
+        />
+
+        <div className="flex items-end justify-around px-2" style={{ height: 68 }}>
           {tabs.map((tab) => {
-            const isActive = location.pathname === tab.path;
-            const Icon = tab.icon;
+            const isActive  = location.pathname === tab.path;
+            const Icon      = tab.icon;
             const isPressed = pressing === tab.label;
+
             return (
               <button
                 key={tab.label}
@@ -45,39 +57,40 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
                 onPointerUp={() => { setPressing(null); navigate(tab.path); }}
                 onPointerLeave={() => setPressing(null)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full min-w-[48px]",
-                  "transition-colors duration-150 select-none",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  'relative flex flex-col items-center justify-end gap-1 flex-1 pb-3 pt-2 min-w-[48px] select-none',
+                  isActive ? 'text-primary' : 'text-muted-foreground',
                 )}
                 style={{
-                  transform: isPressed ? 'scale(0.88)' : 'scale(1)',
+                  transform: isPressed ? 'scale(0.86)' : 'scale(1)',
                   transition: 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), color 0.15s ease',
                 }}
               >
-                {/* Active background pill */}
+                {/* Active pill background */}
                 {isActive && (
                   <span
-                    className="absolute inset-x-3 top-1.5 bottom-1.5 rounded-2xl bg-primary/10"
-                    style={{ animation: 'scale-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+                    className="absolute inset-x-2 top-1 bottom-3.5 rounded-2xl bg-primary/12"
+                    style={{ animation: 'scale-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
                   />
                 )}
 
+                {/* Icon */}
                 <span
+                  className="relative z-10"
                   style={{
-                    transform: isActive ? 'scale(1.15) translateY(-1px)' : 'scale(1)',
+                    transform: isActive ? 'translateY(-2px) scale(1.12)' : 'scale(1)',
                     transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-                    position: 'relative',
-                    zIndex: 1,
+                    filter: isActive ? 'drop-shadow(0 0 6px hsl(82 100% 67% / 0.55))' : 'none',
                   }}
                 >
-                  <Icon
-                    className="h-5 w-5"
-                    strokeWidth={isActive ? 2.5 : 1.8}
-                  />
+                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 1.8} />
                 </span>
 
+                {/* Label */}
                 <span
-                  className={cn("text-[10px] relative z-10", isActive ? "font-bold" : "font-medium")}
+                  className={cn(
+                    'relative z-10 text-[10px] leading-none',
+                    isActive ? 'font-bold' : 'font-medium',
+                  )}
                   style={{
                     transform: isActive ? 'scale(1.05)' : 'scale(1)',
                     transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -86,13 +99,14 @@ export function BottomTabNav({ hidden }: BottomTabNavProps) {
                   {tab.label}
                 </span>
 
-                {/* Active dot indicator */}
+                {/* Active dot */}
                 {isActive && (
                   <span
-                    className="absolute bottom-1 left-1/2 w-1 h-1 rounded-full bg-primary"
+                    className="absolute bottom-1.5 left-1/2 w-1 h-1 rounded-full bg-primary"
                     style={{
                       transform: 'translateX(-50%)',
                       animation: 'bounce-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                      boxShadow: '0 0 6px 1px hsl(82 100% 67% / 0.6)',
                     }}
                   />
                 )}
