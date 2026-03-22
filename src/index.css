@@ -275,48 +275,13 @@
     background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(0 0% 10%) 100%);
   }
 
-  /* Glassmorphism card */
-  .card-glass {
-    background: hsl(var(--card) / 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid hsl(var(--border) / 0.6);
-  }
-
-  /* Gradient border via pseudo element */
-  .gradient-border {
-    position: relative;
-  }
-  .gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--primary) / 0.1));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
   /* Glow effects */
   .glow-primary {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.35);
+    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
   }
 
   .glow-success {
     box-shadow: 0 0 20px -5px hsl(var(--success) / 0.3);
-  }
-
-  /* Colored icon badge */
-  .icon-badge {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
-    border-radius: 0.625rem;
   }
 
   /* Muscle group badge colors */
@@ -351,13 +316,13 @@
 
   /* Animation utilities */
   .animate-in {
-    animation: animateIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: animateIn 0.3s ease-out forwards;
   }
 
   @keyframes animateIn {
     from {
       opacity: 0;
-      transform: translateY(14px);
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
