@@ -169,12 +169,13 @@ export default function Dashboard() {
   const cardIsColored = todayDayType && todayDayType !== 'rest';
 
   // Staggered React-driven visibility — never resets on re-render
+  // v1/v2 use delay 0 to guarantee stat chips and workout card are never stuck invisible
   const v0 = useVisible(50);
-  const v1 = useVisible(150);
-  const v2 = useVisible(250);
-  const v3 = useVisible(350);
-  const v4 = useVisible(450);
-  const v5 = useVisible(550);
+  const v1 = useVisible(0);
+  const v2 = useVisible(0);
+  const v3 = useVisible(200);
+  const v4 = useVisible(300);
+  const v5 = useVisible(400);
 
   return (
     <>
