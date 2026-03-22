@@ -101,14 +101,14 @@ export default function Dashboard() {
   const [editTarget, setEditTarget] = useState<any>(null);
 
   return (
-    <div className="space-y-6 animate-in">
+    <div className="space-y-6">
       {/* Header: greeting + avatar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-slide-up animate-delay-75">
         <div>
           <p className="text-sm text-muted-foreground">{greeting}</p>
-          <h1 className="text-2xl font-bold text-foreground">{displayName}</h1>
+          <h1 className="text-2xl font-bold text-foreground gradient-text">{displayName}</h1>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground font-bold text-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-foreground font-bold text-sm glow-primary animate-scale-in animate-delay-150">
           {initials}
         </div>
       </div>
@@ -118,23 +118,23 @@ export default function Dashboard() {
 
       {/* 3 stat chips */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-card border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{streak}</p>
+        <div className="rounded-2xl bg-card border border-border p-4 text-center card-hover animate-slide-up animate-delay-100">
+          <p className="text-2xl font-bold text-foreground stat-number">{streak}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Day Streak</p>
         </div>
-        <div className="rounded-2xl bg-card border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{weeklyCompletedCount}</p>
+        <div className="rounded-2xl bg-card border border-border p-4 text-center card-hover animate-slide-up animate-delay-150">
+          <p className="text-2xl font-bold text-foreground stat-number">{weeklyCompletedCount}</p>
           <p className="text-xs text-muted-foreground mt-0.5">This Week</p>
         </div>
-        <div className="rounded-2xl bg-card border border-border p-4 text-center">
-          <p className="text-2xl font-bold text-foreground">{Math.round(nutritionStats.calories)}</p>
+        <div className="rounded-2xl bg-card border border-border p-4 text-center card-hover animate-slide-up animate-delay-200">
+          <p className="text-2xl font-bold text-foreground stat-number">{Math.round(nutritionStats.calories)}</p>
           <p className="text-xs text-muted-foreground mt-0.5">Calories</p>
         </div>
       </div>
 
       {/* TODAY WORKOUT CARD */}
-      <div 
-        className="rounded-2xl bg-primary text-primary-foreground p-5 cursor-pointer"
+      <div
+        className="rounded-2xl bg-primary text-primary-foreground p-5 cursor-pointer card-hover glow-primary-animated animate-scale-in animate-delay-200"
         onClick={() => navigate('/workouts')}
       >
         <p className="text-[10px] uppercase tracking-widest font-semibold opacity-70 mb-1">Today</p>
@@ -155,7 +155,7 @@ export default function Dashboard() {
         )}
         {!isRestDay && (
           <div className="mt-3">
-            <span className="inline-flex items-center gap-2 rounded-xl bg-primary-foreground text-primary px-4 py-2 text-sm font-bold">
+            <span className="inline-flex items-center gap-2 rounded-xl bg-primary-foreground text-primary px-4 py-2 text-sm font-bold btn-press">
               {todayWorkout?.completed ? '✅ Completed' : 'Start Workout'}
               <ChevronRight className="h-4 w-4" />
             </span>
@@ -164,7 +164,7 @@ export default function Dashboard() {
       </div>
 
       {/* THIS WEEK - day pills */}
-      <div>
+      <div className="animate-slide-up animate-delay-300">
         <p className="section-label">This Week</p>
         <div className="flex gap-2 mt-2">
           {dayLabels.map((label, i) => {
@@ -173,11 +173,14 @@ export default function Dashboard() {
               <button
                 key={i}
                 onClick={() => setSelectedDayIdx(i)}
-                className={`flex-1 h-10 rounded-full text-sm font-bold transition-colors ${
-                  isActive 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'bg-secondary text-muted-foreground'
+                className={`flex-1 h-10 rounded-full text-sm font-bold btn-press ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
                 }`}
+                style={{
+                  transition: 'background-color 0.2s ease, color 0.2s ease, transform 0.15s ease',
+                }}
               >
                 {label}
               </button>
@@ -200,26 +203,26 @@ export default function Dashboard() {
       </div>
 
       {/* QUICK ACTIONS */}
-      <div>
+      <div className="animate-slide-up animate-delay-400">
         <p className="section-label">Quick Actions</p>
         <div className="grid grid-cols-3 gap-3 mt-2">
           <button
             onClick={() => navigate('/workouts')}
-            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 transition-colors hover:border-primary/40"
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 card-hover"
           >
             <Dumbbell className="h-6 w-6 text-primary" />
             <span className="text-xs font-semibold text-foreground">Log Workout</span>
           </button>
           <button
             onClick={() => navigate('/nutrition')}
-            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 transition-colors hover:border-primary/40"
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 card-hover"
           >
             <Apple className="h-6 w-6 text-primary" />
             <span className="text-xs font-semibold text-foreground">Add Meal</span>
           </button>
           <button
             onClick={() => navigate('/progress')}
-            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 transition-colors hover:border-primary/40"
+            className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-card border border-border p-5 card-hover"
           >
             <BarChart3 className="h-6 w-6 text-primary" />
             <span className="text-xs font-semibold text-foreground">Progress</span>

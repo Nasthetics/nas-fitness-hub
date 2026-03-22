@@ -109,6 +109,48 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.5" },
         },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-down": {
+          from: { opacity: "0", transform: "translateY(-16px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.92)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "bounce-in": {
+          "0%": { opacity: "0", transform: "scale(0.8)" },
+          "60%": { opacity: "1", transform: "scale(1.05)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "shimmer": {
+          from: { backgroundPosition: "200% center" },
+          to: { backgroundPosition: "-200% center" },
+        },
+        "glow-breathe": {
+          "0%, 100%": { boxShadow: "0 0 12px -4px hsl(82 100% 67% / 0.4)" },
+          "50%": { boxShadow: "0 0 28px -2px hsl(82 100% 67% / 0.7)" },
+        },
+        "tab-pop": {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(0.88)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "indicator-slide": {
+          from: { opacity: "0", transform: "scaleX(0)" },
+          to: { opacity: "1", transform: "scaleX(1)" },
+        },
+        "number-tick": {
+          from: { opacity: "0", transform: "translateY(-8px) scale(0.9)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -116,6 +158,16 @@ export default {
         "fade-in": "fade-in 0.3s ease-out",
         "slide-in-right": "slide-in-right 0.3s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "slide-up": "slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "slide-down": "slide-down 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "scale-in": "scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "bounce-in": "bounce-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "float": "float 3s ease-in-out infinite",
+        "shimmer": "shimmer 2.5s linear infinite",
+        "glow-breathe": "glow-breathe 2.5s ease-in-out infinite",
+        "tab-pop": "tab-pop 0.25s ease-out",
+        "indicator-slide": "indicator-slide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "number-tick": "number-tick 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

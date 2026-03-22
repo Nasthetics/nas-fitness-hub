@@ -316,18 +316,149 @@
 
   /* Animation utilities */
   .animate-in {
-    animation: animateIn 0.3s ease-out forwards;
+    animation: animateIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   @keyframes animateIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(14px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Staggered animation delays */
+  .animate-delay-75  { animation-delay: 75ms; }
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-150 { animation-delay: 150ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+
+  /* Start invisible so staggered animations don't flash */
+  .animate-slide-up,
+  .animate-scale-in,
+  .animate-bounce-in,
+  .animate-fade-in {
+    opacity: 0;
+  }
+
+  .animate-slide-up   { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-scale-in   { animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-bounce-in  { animation: bounce-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .animate-fade-in    { animation: fade-in 0.35s ease-out forwards; }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.92); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes bounce-in {
+    0%   { opacity: 0; transform: scale(0.8); }
+    60%  { opacity: 1; transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Card hover lift effect */
+  .card-hover {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.2s ease;
+  }
+  .card-hover:active {
+    transform: scale(0.97);
+  }
+  @media (hover: hover) {
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px -6px hsl(var(--primary) / 0.25);
+      border-color: hsl(var(--primary) / 0.35);
+    }
+  }
+
+  /* Button press effect */
+  .btn-press {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-press:active {
+    transform: scale(0.94);
+  }
+
+  /* Shimmer loading effect */
+  .shimmer-bg {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 25%,
+      hsl(var(--muted-foreground) / 0.1) 50%,
+      hsl(var(--muted)) 75%
+    );
+    background-size: 400% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%   { background-position: 200% center; }
+    100% { background-position: -200% center; }
+  }
+
+  /* Animated glow on primary elements */
+  .glow-primary-animated {
+    animation: glow-breathe 2.5s ease-in-out infinite;
+  }
+  @keyframes glow-breathe {
+    0%, 100% { box-shadow: 0 0 12px -4px hsl(var(--primary) / 0.4); }
+    50%       { box-shadow: 0 0 28px -2px hsl(var(--primary) / 0.7); }
+  }
+
+  /* Gradient animated text */
+  .gradient-text {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(82 100% 85%) 50%,
+      hsl(var(--primary)) 100%
+    );
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 3s linear infinite;
+  }
+
+  /* Tab indicator */
+  .tab-indicator {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    animation: indicator-slide 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes indicator-slide {
+    from { opacity: 0; transform: translateX(-50%) scaleX(0); }
+    to   { opacity: 1; transform: translateX(-50%) scaleX(1); }
+  }
+
+  /* Floating pulse for streak / key numbers */
+  .stat-number {
+    display: inline-block;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .stat-number:hover {
+    transform: scale(1.12);
   }
 
   /* Number input without spinners */
