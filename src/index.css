@@ -568,6 +568,7 @@
   }
 
   /* ── Additional delay classes ── */
+  .animate-delay-250 { animation-delay: 250ms; }
   .animate-delay-600 { animation-delay: 600ms; }
   .animate-delay-700 { animation-delay: 700ms; }
 

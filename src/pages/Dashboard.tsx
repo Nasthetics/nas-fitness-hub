@@ -190,7 +190,7 @@ export default function Dashboard() {
       <DeloadBanner />
 
       {/* ── Stat chips ─────────────────────────── */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3 animate-slide-up-far animate-delay-150">
         <StatCard
           icon={<Flame className="h-4 w-4 text-orange-400" />}
           iconBg="bg-orange-500/15"
@@ -216,7 +216,7 @@ export default function Dashboard() {
 
       {/* ── Today Workout Card ──────────────────── */}
       <div
-        className="relative rounded-2xl overflow-hidden cursor-pointer card-hover glow-primary-animated animate-scale-in animate-delay-200 shine-sweep"
+        className="relative rounded-2xl overflow-hidden cursor-pointer card-hover glow-primary-animated animate-slide-up-far animate-delay-250 shine-sweep"
         onClick={() => navigate('/workouts')}
         style={{ background: cardStyle.bg }}
       >
@@ -427,7 +427,7 @@ function StatCard({
 }) {
   const displayValue = useCountUp(value, 800);
   return (
-    <div className={`rounded-2xl bg-card border border-border p-4 flex flex-col gap-2 card-hover animate-bounce-in ${delay}`}>
+    <div className={`rounded-2xl bg-card border border-border p-4 flex flex-col gap-2 card-hover animate-slide-up-far ${delay}`}>
       <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconBg}`}>
         {icon}
       </div>
