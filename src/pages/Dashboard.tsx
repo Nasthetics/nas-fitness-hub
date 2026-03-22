@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { format, startOfWeek, endOfWeek, subDays } from 'date-fns';
 import {
   Dumbbell, Apple, BarChart3, ChevronRight, Clock,
@@ -42,6 +42,25 @@ const DAY_TYPE_CARD: Record<WorkoutDayType, { bg: string; badge: string }> = {
     badge: 'bg-muted text-muted-foreground',
   },
 };
+
+function useCountUp(target: number, duration = 700) {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (target === 0) { setDisplay(0); return; }
+    let rafId: number;
+    let startTime: number | null = null;
+    const animate = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(Math.round(target * eased));
+      if (progress < 1) rafId = requestAnimationFrame(animate);
+    };
+    rafId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafId);
+  }, [target, duration]);
+  return display;
+}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -135,22 +154,32 @@ export default function Dashboard() {
   const cardIsColored = todayDayType && todayDayType !== 'rest';
 
   return (
+    <>
+      {/* ── Ambient background orbs ── */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: -1 }}>
+        <div className="orb orb-primary" />
+        <div className="orb orb-purple" />
+        <div className="orb orb-blue" />
+      </div>
+
     <div className="space-y-5">
 
       {/* ── Header ──────────────────────────────── */}
       <div className="flex items-center justify-between animate-slide-up animate-delay-75">
         <div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground animate-slide-left animate-delay-100">
             {greeting} · {format(new Date(), 'EEEE, MMM d')}
           </p>
           <h1 className="text-2xl font-bold gradient-text leading-tight">{displayName}</h1>
         </div>
         <div className="relative">
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 border-2 border-primary/40 text-foreground font-bold text-sm glow-primary">
+          {/* Pulse ring */}
+          <div className="absolute inset-0 rounded-full ring-pulse border-2 border-primary/40 pointer-events-none" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 border-2 border-primary/40 text-foreground font-bold text-sm glow-primary-animated">
             {initials}
           </div>
           {streak > 0 && (
-            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white border-2 border-background">
+            <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white border-2 border-background badge-bounce">
               🔥
             </span>
           )}
@@ -187,7 +216,7 @@ export default function Dashboard() {
 
       {/* ── Today Workout Card ──────────────────── */}
       <div
-        className="relative rounded-2xl overflow-hidden cursor-pointer card-hover glow-primary-animated animate-scale-in animate-delay-200"
+        className="relative rounded-2xl overflow-hidden cursor-pointer card-hover glow-primary-animated animate-scale-in animate-delay-200 shine-sweep"
         onClick={() => navigate('/workouts')}
         style={{ background: cardStyle.bg }}
       >
@@ -240,7 +269,7 @@ export default function Dashboard() {
 
       {/* ── Nutrition Card ──────────────────────── */}
       <div
-        className="rounded-2xl bg-card border border-border p-4 space-y-3 animate-slide-up animate-delay-300 card-hover cursor-pointer"
+        className="rounded-2xl bg-card border border-border p-4 space-y-3 animate-slide-up-far animate-delay-300 card-hover cursor-pointer"
         onClick={() => navigate('/nutrition')}
       >
         {/* Header row */}
@@ -295,7 +324,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── This Week ───────────────────────────── */}
-      <div className="animate-slide-up animate-delay-400">
+      <div className="animate-slide-up-far animate-delay-400">
         <p className="section-label">This Week</p>
         <div className="flex gap-1.5 mt-2">
           {dayLabels.map((label, i) => {
@@ -342,7 +371,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Quick Actions ───────────────────────── */}
-      <div className="animate-slide-up animate-delay-500">
+      <div className="animate-slide-up-far animate-delay-600">
         <p className="section-label">Quick Actions</p>
         <div className="grid grid-cols-3 gap-3 mt-2">
           <QuickAction
@@ -381,6 +410,7 @@ export default function Dashboard() {
         />
       )}
     </div>
+    </>
   );
 }
 
@@ -395,12 +425,13 @@ function StatCard({
   label: string;
   delay: string;
 }) {
+  const displayValue = useCountUp(value, 800);
   return (
-    <div className={`rounded-2xl bg-card border border-border p-4 flex flex-col gap-2 card-hover animate-slide-up ${delay}`}>
+    <div className={`rounded-2xl bg-card border border-border p-4 flex flex-col gap-2 card-hover animate-bounce-in ${delay}`}>
       <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconBg}`}>
         {icon}
       </div>
-      <p className="text-2xl font-bold text-foreground stat-number leading-none">{value}</p>
+      <p className="text-2xl font-bold text-foreground stat-number leading-none">{displayValue}</p>
       <p className="text-[11px] text-muted-foreground">{label}</p>
     </div>
   );

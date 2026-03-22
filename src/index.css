@@ -470,6 +470,107 @@
     animation: shimmer 3s linear infinite;
   }
 
+  /* ── Ambient background orbs ── */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+  }
+  .orb-primary {
+    width: 360px;
+    height: 360px;
+    background: hsl(var(--primary) / 0.13);
+    top: -100px;
+    right: -100px;
+    animation: float-orb 9s ease-in-out infinite;
+  }
+  .orb-purple {
+    width: 260px;
+    height: 260px;
+    background: hsl(270 70% 60% / 0.09);
+    top: 38%;
+    left: -90px;
+    animation: float-orb 11s ease-in-out infinite;
+    animation-delay: -4s;
+  }
+  .orb-blue {
+    width: 300px;
+    height: 300px;
+    background: hsl(199 80% 55% / 0.08);
+    bottom: 12%;
+    right: -70px;
+    animation: float-orb 13s ease-in-out infinite;
+    animation-delay: -7s;
+  }
+  @keyframes float-orb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33%       { transform: translate(-28px, 38px) scale(1.04); }
+    66%       { transform: translate(22px, -26px) scale(0.96); }
+  }
+
+  /* ── Card shine sweep ── */
+  .shine-sweep {
+    overflow: hidden;
+  }
+  .shine-sweep::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.055) 50%,
+      transparent 100%
+    );
+    animation: shine-sweep 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes shine-sweep {
+    0%   { left: -120%; }
+    45%  { left: 160%; }
+    100% { left: 160%; }
+  }
+
+  /* ── Avatar pulse ring ── */
+  .ring-pulse {
+    animation: ring-pulse 2.8s ease-out infinite;
+  }
+  @keyframes ring-pulse {
+    0%   { opacity: 0.55; transform: scale(1); }
+    100% { opacity: 0;    transform: scale(1.65); }
+  }
+
+  /* ── Streak badge bounce ── */
+  .badge-bounce {
+    animation: badge-bounce 1.8s ease-in-out infinite;
+  }
+  @keyframes badge-bounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    40%       { transform: translateY(-4px) scale(1.15); }
+    60%       { transform: translateY(-2px) scale(1.08); }
+  }
+
+  /* ── Stronger entrance animations ── */
+  .animate-slide-up-far { animation: slide-up-far 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+  @keyframes slide-up-far {
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-slide-left { animation: slide-left 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+  @keyframes slide-left {
+    from { opacity: 0; transform: translateX(-24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── Additional delay classes ── */
+  .animate-delay-600 { animation-delay: 600ms; }
+  .animate-delay-700 { animation-delay: 700ms; }
+
   /* Tab indicator */
   .tab-indicator {
     position: absolute;
